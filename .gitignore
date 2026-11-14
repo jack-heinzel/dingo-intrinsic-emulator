@@ -14,3 +14,6 @@ data/
 models/
 outputs/
 training/
+
+# frozen launcher copies
+launch_frozen_*.sh
