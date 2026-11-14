@@ -1,0 +1,16 @@
+# Python / environments
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Large artifacts: keep these on Ceph, not in git or GPFS home
+*.hdf5
+*.h5
+*.pt
+*.npy
+*.npz
+data/
+models/
+outputs/
+training/

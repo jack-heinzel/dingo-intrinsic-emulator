@@ -1,0 +1,3 @@
+[submodule "dingo-tutorial"]
+	path = dingo-tutorial
+	url = https://github.com/stephengreen/dingo-tutorial.git
