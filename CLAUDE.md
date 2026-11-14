@@ -135,3 +135,6 @@ The 15 dimensions split 7 + 2 + 6.
 - 2026-11-14 ~18:45 EST: smoke tests on the login node (300 waveforms, tiny networks, one CPU epoch) pass for A and
   B. They cover the transform chain, the round trip of the relabelings (1e-15), and the folded log-prob. Waveform
   cost is ~25-100 ms each on one core.
+- 2026-11-14 18:37 EST: submitted (user approved) data job 7475306 (`slurm/gen_data.sbatch`, gen, 1 node, 6 h)
+  and training jobs 7475307 (run A) and 7475308 (run B) (`slurm/train.sbatch`, 1 H100 each, 2 d), afterok on 7475306.
+  Logs: `/mnt/ceph/users/jheinzel/dingo-intrinsic-emulator/logs/`.
