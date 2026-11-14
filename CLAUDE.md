@@ -31,6 +31,22 @@ The 15 dimensions split 7 + 2 + 6.
   - Physical parameters as context are untested: the only examples are GNPE time proxies and the BNS chirp-mass
     pin. Run a small test first.
 
+## Coordinates for q1 (masses: user, 2026-11-14; spins: proposed, not yet agreed)
+
+- Masses: use the exchange symmetry of the likelihood as a reflective boundary (user). Relabeling swaps the spins
+  too: (m1, a1, θ1) <-> (m2, a2, θ2), and φ12 -> −φ12 in q2. Proposed coordinates are (ln Mc, ln q) with
+  ln q ∈ (ln q_min, −ln q_min), so the swap is ln q -> −ln q.
+- Spins (proposed): u_i = artanh(a_i)·(cos θ_i, sin θ_i), with u_⊥ signed. The azimuth-marginalized likelihood is
+  smooth and even in χ_⊥, so flatness in cos θ as a -> 0 is just continuity at the origin. artanh is odd, so the
+  map is smooth at 0 and removes the |χ| = 1 edge; |∂χ/∂u| = sech²(r) tanh(r)/r. The training prior is uniform
+  in the (χ_z, χ_⊥) disk, which is smooth in u. The standard prior (uniform in a and cos θ) has a 1/a spike at the
+  origin.
+- Symmetry group G (8 elements): label swap × the sign of u_1⊥ × the sign of u_2⊥. Train with a random g ∈ G
+  (augmentation after waveform generation). Evaluate q_fold(x) = Σ_g q(g·x) on ln q ≤ 0, u_⊥ ≥ 0. q2 conditions
+  on these folded intrinsics.
+- To check: whether IMRPhenomXPHM is invariant under relabeling (numerically). This needs a custom training
+  transform that subclasses or patches dingo's set_train_transforms.
+
 ## Open questions
 
 - phi_12 and phi_jl are intrinsic but sit in q2, so the emulator marginalizes them. Confirm this.
