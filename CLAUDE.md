@@ -44,8 +44,15 @@ The 15 dimensions split 7 + 2 + 6.
 - Symmetry group G (8 elements): label swap × the sign of u_1⊥ × the sign of u_2⊥. Train with a random g ∈ G
   (augmentation after waveform generation). Evaluate q_fold(x) = Σ_g q(g·x) on ln q ≤ 0, u_⊥ ≥ 0. q2 conditions
   on these folded intrinsics.
-- To check: whether IMRPhenomXPHM is invariant under relabeling (numerically). This needs a custom training
-  transform that subclasses or patches dingo's set_train_transforms.
+- Augmentation relabels parameters only. Waveforms are always generated with the canonical labels (m1 ≥ m2), and
+  the sign of u_⊥ is a coin flip independent of d. So the symmetry is exact by construction and the waveform model
+  needs no invariance check. The fold is normalized for any q: Σ_g ∫_{g·D} q = 1, since each g has |det| = 1. The
+  training prior must be G-symmetric. This needs a custom training transform that subclasses or patches dingo's
+  set_train_transforms.
+- Spin prior for inference: uniform a and uniform cos θ (user, 2026-11-14). In u it is ∝ |sin θ| sech²(r)/r: a 1/r
+  spike at a = 0 and a kink at sin θ = 0. Proposal, not yet agreed: train on a smooth G-symmetric π_train (Gaussian
+  in u) and apply the user's prior analytically. The emulator is L ∝ q_fold/π_train, and posteriors are
+  ∝ q_fold · π_user/π_train.
 
 ## Open questions
 
