@@ -150,6 +150,38 @@ these properties numerically. The map also keeps everything we wanted:
 - It is smooth everywhere, so the quantity we learn stays smooth.
 - The sideways mirror is just *v* → −*v*.
 
+**Going back from the disk to the square.** Write *x* for the along-axis part and *y* for the sideways part (with
+its sign), so *x*² + *y*² ≤ 1. Then
+
+  *u* = ½ √(2 + *x*² − *y*² + 2√2 *x*) − ½ √(2 + *x*² − *y*² − 2√2 *x*),
+
+  *v* = ½ √(2 − *x*² + *y*² + 2√2 *y*) − ½ √(2 − *x*² + *y*² − 2√2 *y*).
+
+*Why this works.* Squaring the forward formulas gives *x*² = *u*² − *u*²*v*²/2 and *y*² = *v*² − *u*²*v*²/2, so
+*x*² − *y*² = *u*² − *v*². Call *B* = √(2 − *v*²); the forward formula says √2 *x* = *u B*. Then the quantity under
+each square root in the formula for *u* is
+
+  2 + *x*² − *y*² ± 2√2 *x* = *u*² ± 2*uB* + (2 − *v*²) = (*B* ± *u*)².
+
+Since *B* is at least 1 and *u* is at most 1 in size, both *B* + *u* and *B* − *u* are non-negative, so the square
+roots are exactly *B* + *u* and *B* − *u*. Half their difference is *u*. The formula for *v* works the same way, with
+the roles of *u* and *v* swapped.
+
+*Two practical notes for computing it.*
+
+- At the four points on the circle where the square's corners land (*x* and *y* both ±1/√2), one of the quantities
+  under a square root is exactly zero. Rounding can make it a tiny negative number, so clip it at zero before taking
+  the root.
+- Near the centre, the formula subtracts two nearly equal numbers, which loses accuracy. Multiplying top and bottom
+  by the sum of the two roots gives an equivalent form that is accurate everywhere:
+
+  *u* = 2√2 *x* / [√(2 + *x*² − *y*² + 2√2 *x*) + √(2 + *x*² − *y*² − 2√2 *x*)],
+
+  and the same for *v* with *x* and *y* swapped (including the sign of the *x*² − *y*² term).
+
+We checked numerically that going from the square to the disk and back returns the starting point, to about 4 × 10⁻¹⁴,
+everywhere on the square including its edges and corners.
+
 **A model built for boxes.** Every coordinate we learn now lives in a box with flat walls. (The overall mass and
 distance coordinates already did, because their starting distributions have hard upper and lower limits.) We use a
 density model that maps the box onto itself, built from flexible one-dimensional curves that start at one wall and
