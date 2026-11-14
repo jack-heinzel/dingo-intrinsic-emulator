@@ -60,10 +60,11 @@ The 15 dimensions split 7 + 2 + 6.
 - Rejected (2026-11-14, user): the radial stretch u = artanh(a)·n̂, or any map that sends a wall to infinity.
   p(a -> 1) ∝ (1 − a)^(α/2 − 1) for a learned tail e^(−αr): a spike or a zero unless α = 2 exactly. dingo's
   linear-tail splines with a Gaussian base give p(1) = 0.
-- Flow (proposed): q1 lives on the prior box (ln Mc, ln q, u1, v1, u2, v2, z). Use a box-preserving flow:
-  RQ-spline couplings on a bounded interval (nflows tails=None), permutations only (no LULinear), and a uniform
-  base. Walls get finite, learnable densities and nothing leaks. This needs a custom flow builder in place of
-  dingo's create_nsf_*.
+- Flow: the default dingo NSF (user, 2026-11-14: "try to avoid building any new code"), with
+  `tail_bound: 3.0` so the splines cover the whole standardized box (edges at ±1.73 to ±1.86σ; the default 1.0
+  leaves ~40% of the box in linear tails). Folding removes the mirror walls, but the outer walls (|χ| = 1, q_min,
+  Mc and d_L bounds) leak, as they do in stock dingo. A box-preserving flow (bounded RQ splines, tails=None,
+  permutations only, uniform base) would fix them; it is deferred because it needs a custom flow builder.
 - Symmetry group G (8 elements): label swap × the sign of v1 × the sign of v2. All 8 map the box onto itself.
   Train with a random g ∈ G (augmentation after waveform generation). Evaluate q_fold(x) = Σ_g q(g·x) on
   ln q ≤ 0, v ≥ 0. Don't mirror at a = 1 (no symmetry there). q2 conditions on these folded intrinsics.
@@ -73,9 +74,28 @@ The 15 dimensions split 7 + 2 + 6.
   training prior must be G-symmetric. This needs a custom training transform that subclasses or patches dingo's
   set_train_transforms.
 - Spin prior for inference: uniform a and uniform cos θ (user, 2026-11-14). In box coordinates it has a 1/a spike at
-  a = 0 and a kink at v = 0. Proposal, not yet agreed: train on π_train uniform in the box (smooth and G-symmetric)
-  and apply the user's prior analytically. The emulator is L ∝ q_fold/π_train, and posteriors are
+  a = 0 and a kink at v = 0. Run B trains on each spin uniform in the disk, p(a) ∝ a with uniform
+  tilt (bilby PowerLaw(1) and Uniform, so no code). That is π_box = J × const: smooth and G-symmetric. The user's
+  prior is applied analytically afterwards. The emulator is L ∝ q_fold/π_train, and posteriors are
   ∝ q_fold · π_user/π_train.
+
+## Runs A and B: pilot comparison (user, 2026-11-14)
+
+- Both runs train q1 only. They share the embedding (Stephen's suggestion: the DenseResNet has no funnel, 24
+  blocks all 1024 wide), `tail_bound: 3`, O3 H1+L1+V1 noise, BBH data (8 s, 20-1024 Hz, IMRPhenomXPHM, f_ref 20,
+  detector-frame Mc 10-100, q 0.125-1, d_L 100-6000 Mpc), and the budget: 1M waveforms, 120 + 60 epochs, batch
+  4096, one H100 each.
+  - A: stock dingo (`chirp_mass, mass_ratio, a_1, a_2, tilt_1, tilt_2, luminosity_distance`, standard priors).
+  - B: (ln Mc, ln q, u1, v1, u2, v2, d_L) with relabeling augmentation (`emulator/box_reparam.py`, a patch of
+    `set_train_transforms` loaded by `scripts/train.py`) and a fixed standardization. Mirror means are exactly 0.
+- Configs: `configs/`. Slurm scripts: `slurm/gen_data.sbatch` (both waveform sets, plus the ASD set from 16 parallel
+  `dingo_estimate_psds` workers merged with `dingo_merge_asd_datasets`) and `slurm/train.sbatch A|B` (resumes from
+  model_latest.pt). Data, models and logs are under `/mnt/ceph/users/jheinzel/dingo-intrinsic-emulator/`.
+- O3 PSDs: 300 per detector, evenly spread (`scripts/thin_psd_segments.py`). dingo's num_psds_max keeps the first
+  N segments, and time_gap only thins within a science segment: O3 has ~5700 H1, ~6200 L1, ~1800 V1 segments.
+- Login node: set OPENBLAS_NUM_THREADS=1 (and OMP/MKL), or numpy imports die (per-user thread cap).
+- To compare later: the emulator log L on held-out injections, both against a reference marginal likelihood
+  (not yet chosen) and via coverage and P-P tests on the intrinsics.
 
 ## Open questions
 
@@ -110,3 +130,8 @@ The 15 dimensions split 7 + 2 + 6.
 ## Runs
 
 - 2026-11-14 16:03 EST: environment installed; tutorial imports verified on the rusty3 login node (CPU only).
+- 2026-11-14 18:32 EST: `asd/asds_O3_fiducial.hdf5` (one O3 PSD each for H1, L1 and V1, GPS ~1238167000) built
+  on the login node.
+- 2026-11-14 ~18:45 EST: smoke tests on the login node (300 waveforms, tiny networks, one CPU epoch) pass for A and
+  B. They cover the transform chain, the round trip of the relabelings (1e-15), and the folded log-prob. Waveform
+  cost is ~25-100 ms each on one core.
