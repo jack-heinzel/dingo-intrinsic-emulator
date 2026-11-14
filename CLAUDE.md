@@ -36,27 +36,33 @@ The 15 dimensions split 7 + 2 + 6.
 - Masses: use the exchange symmetry of the likelihood as a reflective boundary (user). Relabeling swaps the spins
   too: (m1, a1, θ1) <-> (m2, a2, θ2), and φ12 -> −φ12 in q2. Proposed coordinates are (ln Mc, ln q) with
   ln q ∈ (ln q_min, −ln q_min), so the swap is ln q -> −ln q.
-- Spins (proposed): box coordinates χ_z = a cos θ and s = a sin θ / √(1 − χ_z²), both in [−1, 1], with s signed.
-  The azimuth-marginalized likelihood is smooth in (χ_z, χ_⊥² = s²(1 − χ_z²)), so it is smooth and even in s, and
-  a = 0 is the single point (0, 0) (flat in tilt). The edges χ_z = ±1 collapse to the poles. That Jacobian,
-  √(1 − χ_z²), goes into π_train.
+- Principle: only degeneracies (one physical point, many coordinate values) hurt. Jacobian zeros don't, because
+  L = q_x/π_train,x is a scalar computed in the same coordinates x, so the Jacobian cancels, and the user's prior
+  multiplies L as a function.
+- Spins (proposed): the elliptical-grid map from the square (u, v) ∈ [−1, 1]² to the disk:
+  χ_z = u √(1 − v²/2), χ_⊥ = v √(1 − u²/2), with χ_⊥ signed. It is one-to-one on the closed square (edges onto
+  quarter circles, no collapse). J = (1 − u²/2 − v²/2)/(√(1 − u²/2) √(1 − v²/2)) is zero only at the 4 corners.
+  It is smooth, a = 0 is (0, 0), and the mirror is v -> −v. Checked numerically 2026-11-14: closed-form inverse
+  round-trips to 4e-14, J matches finite differences. L is smooth in (χ_z, χ_⊥²), hence in (u, v).
+- Rejected (2026-11-14, user): s = χ_⊥/√(1 − χ_z²). The edges χ_z = ±1 collapse to the poles, which is a
+  degeneracy.
 - Rejected (2026-11-14, user): the radial stretch u = artanh(a)·n̂, or any map that sends a wall to infinity.
   p(a -> 1) ∝ (1 − a)^(α/2 − 1) for a learned tail e^(−αr): a spike or a zero unless α = 2 exactly. dingo's
   linear-tail splines with a Gaussian base give p(1) = 0.
-- Flow (proposed): q1 lives on the prior box (ln Mc, ln q, χ1z, s1, χ2z, s2, z). Use a box-preserving flow:
+- Flow (proposed): q1 lives on the prior box (ln Mc, ln q, u1, v1, u2, v2, z). Use a box-preserving flow:
   RQ-spline couplings on a bounded interval (nflows tails=None), permutations only (no LULinear), and a uniform
   base. Walls get finite, learnable densities and nothing leaks. This needs a custom flow builder in place of
   dingo's create_nsf_*.
-- Symmetry group G (8 elements): label swap × the sign of s1 × the sign of s2. All 8 map the box onto itself.
+- Symmetry group G (8 elements): label swap × the sign of v1 × the sign of v2. All 8 map the box onto itself.
   Train with a random g ∈ G (augmentation after waveform generation). Evaluate q_fold(x) = Σ_g q(g·x) on
-  ln q ≤ 0, s ≥ 0. Don't mirror at a = 1 (no symmetry there). q2 conditions on these folded intrinsics.
+  ln q ≤ 0, v ≥ 0. Don't mirror at a = 1 (no symmetry there). q2 conditions on these folded intrinsics.
 - Augmentation relabels parameters only. Waveforms are always generated with the canonical labels (m1 ≥ m2), and
   the sign of u_⊥ is a coin flip independent of d. So the symmetry is exact by construction and the waveform model
   needs no invariance check. The fold is normalized for any q: Σ_g ∫_{g·D} q = 1, since each g has |det| = 1. The
   training prior must be G-symmetric. This needs a custom training transform that subclasses or patches dingo's
   set_train_transforms.
 - Spin prior for inference: uniform a and uniform cos θ (user, 2026-11-14). In box coordinates it has a 1/a spike at
-  a = 0 and a kink at s = 0. Proposal, not yet agreed: train on π_train uniform in the box (smooth and G-symmetric)
+  a = 0 and a kink at v = 0. Proposal, not yet agreed: train on π_train uniform in the box (smooth and G-symmetric)
   and apply the user's prior analytically. The emulator is L ∝ q_fold/π_train, and posteriors are
   ∝ q_fold · π_user/π_train.
 

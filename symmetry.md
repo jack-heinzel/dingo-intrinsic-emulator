@@ -119,22 +119,36 @@ Mirroring (Section 2) doesn't have this problem. It is a local reflection and ne
 
 ### 5b. Instead: turn the disk into a square, and use a model built for boxes
 
-**Disk to square.** At a given along-axis value, the sideways part can be at most √(1 − along²) before the arrow
-hits the wall. Divide by that maximum:
+**Two kinds of coordinate trouble.** Before choosing how to turn the disk into a square, it helps to separate two
+problems a coordinate change can have, because only one of them hurts us.
 
-  sideways fraction *s* = (sideways part) / √(1 − along²), which lies between −1 and 1.
+1. **One physical situation, many coordinate values.** This was the flaw of (*a*, cos *θ*) at zero spin: a whole
+   line of coordinates described one black hole. The true answer must be equal along that line, but a learned model
+   doesn't know it and can disagree with itself. **This is the trouble we must avoid.**
+2. **Space squeezed or stretched at some points.** The coordinates are still one-to-one, but some regions are
+   compressed. For a *density* this matters, because densities change when space is squeezed. But the thing we
+   finally want, how well each parameter value explains the data, is not a density. It is an ordinary value
+   attached to each physical situation, and it doesn't change when we relabel coordinates. We compute it as the
+   ratio of two densities written in the *same* coordinates (the learned one and the starting one), so any squeeze
+   affects both equally and cancels. Squeezing only changes where training examples land.
 
-The pair (along-axis part, *s*) now fills the square [−1, 1] × [−1, 1]. It keeps the good properties of the arrow
-picture:
+**A first attempt that fails.** At a given along-axis value, the sideways part can be at most √(1 − along²). Dividing
+by that maximum fills a square, but at along = ±1 (full-size spin pointing exactly along or against the axis) a whole
+edge of the square describes a single physical spin. That is trouble of kind 1, moved from zero spin to the two
+poles.
 
-- Zero spin is still a single point, the centre of the square.
-- The quantity we learn is still smooth everywhere, including at the centre. It depends on the sideways part only
-  through its square, which in the new coordinates is *s*² (1 − along²), a plain polynomial.
-- The sideways mirror is now just *s* → −*s*.
+**A map with no trouble of kind 1.** Name the square's coordinates *u* and *v*, each between −1 and 1, and set
 
-At the top and bottom edges of the square (along = ±1, a spin pointing exactly along or against the axis at full
-size), a whole edge corresponds to a single physical point. This squeeze is a known factor of the coordinate change,
-and it goes into the starting distribution of the training examples (Section 7), which is divided out at the end.
+  along-axis part = *u* √(1 − *v*²/2),  sideways part = *v* √(1 − *u*²/2).
+
+This sends the square onto the disk **one-to-one**, including the edges: each edge of the square becomes a quarter of
+the circle, and no edge is collapsed to a point. A square has corners and a circle doesn't, so some squeezing is
+unavoidable. Here it happens only at the four corners of the square (trouble of kind 2, which cancels). We checked
+these properties numerically. The map also keeps everything we wanted:
+
+- Zero spin is the single point at the centre of the square.
+- It is smooth everywhere, so the quantity we learn stays smooth.
+- The sideways mirror is just *v* → −*v*.
 
 **A model built for boxes.** Every coordinate we learn now lives in a box with flat walls. (The overall mass and
 distance coordinates already did, because their starting distributions have hard upper and lower limits.) We use a
@@ -145,7 +159,7 @@ end at the other. With such a model:
 - the density right at each wall is an ordinary finite number that the model learns from the data, rather than
   something fixed by far-away tail behaviour.
 
-The mirrors from Section 2 still apply on top of this, at equal masses and at *s* = 0, where they make the density
+The mirrors from Section 2 still apply on top of this, at equal masses and at *v* = 0, where they make the density
 flat across the mirror, as the physics requires. At the real walls (spin size 1, and the limits on mass and
 distance) the model is free to learn whatever finite value the data support.
 
@@ -188,7 +202,7 @@ here.
   objects alike, and that depend on a spin only through its size and the size (not sign) of its tilt, satisfy this.
 - **Its shape in the new coordinates matters.** A common choice is uniform in spin size *a* and uniform in cos *θ*.
   Redrawn in the square coordinates, this distribution has a sharp spike at the centre (zero spin) and a crease
-  along *s* = 0. A learned density has to reproduce both, and the spike sits at zero spin, exactly where we wanted
+  along *v* = 0. A learned density has to reproduce both, and the spike sits at zero spin, exactly where we wanted
   accuracy.
 
   The model's output is ultimately divided by the starting distribution, so the training distribution doesn't have
