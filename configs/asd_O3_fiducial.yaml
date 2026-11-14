@@ -1,0 +1,15 @@
+# Single O3 PSD per detector, for training stage 0 (as in the tutorial's production setup).
+dataset_settings:
+  f_s: 4096
+  time_psd: 1024
+  T: 8.0
+  window:
+    roll_off: 0.4
+    type: tukey
+  time_gap: 0
+  num_psds_max: 1
+  detectors:
+    - H1
+    - L1
+    - V1
+  observing_run: O3
