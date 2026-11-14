@@ -44,6 +44,17 @@ The 15 dimensions split 7 + 2 + 6.
   quarter circles, no collapse). J = (1 − u²/2 − v²/2)/(√(1 − u²/2) √(1 − v²/2)) is zero only at the 4 corners.
   It is smooth, a = 0 is (0, 0), and the mirror is v -> −v. Checked numerically 2026-11-14: closed-form inverse
   round-trips to 4e-14, J matches finite differences. L is smooth in (χ_z, χ_⊥²), hence in (u, v).
+- Rules for J: define π_train in box coordinates, so the flow's target is L × smooth. Never divide q_box by J,
+  except to plot the training-prior posterior physically. J ≤ 1 everywhere (max 1 at the origin, mean π/4) and
+  J ≈ 2.8 × the distance to a corner. A uniform box prior puts ~4% of samples within 0.1 of the 4 corner images
+  (2.1× the uniform-disk rate). Reweighting to a physical prior uses w = π_phys · J/π_box, so w -> 0 at the
+  corners (safe).
+- The singularity that matters for reweighting is the user's prior at the origin: π_user ∝ |sin θ|/a. With π_train
+  finite at a = 0, E[w²] ∝ ∫ da/a diverges logarithmically for events whose likelihood allows zero spin, so
+  ESS ~ N/log N. The emulator avoids this: evaluate L(θ) directly, with L(a = 0) well defined and tilt-independent.
+  For posterior samples under π_user, either sample L·π_user directly (MCMC, or importance sampling with a 1/a
+  proposal; preferred) or use the mixture π_train = ½ π_box + ½ π_user (w ≤ 2, but half the spike returns to the
+  flow's target).
 - Rejected (2026-11-14, user): s = χ_⊥/√(1 − χ_z²). The edges χ_z = ±1 collapse to the poles, which is a
   degeneracy.
 - Rejected (2026-11-14, user): the radial stretch u = artanh(a)·n̂, or any map that sends a wall to infinity.
