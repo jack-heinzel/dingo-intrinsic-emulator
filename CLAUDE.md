@@ -36,22 +36,28 @@ The 15 dimensions split 7 + 2 + 6.
 - Masses: use the exchange symmetry of the likelihood as a reflective boundary (user). Relabeling swaps the spins
   too: (m1, a1, θ1) <-> (m2, a2, θ2), and φ12 -> −φ12 in q2. Proposed coordinates are (ln Mc, ln q) with
   ln q ∈ (ln q_min, −ln q_min), so the swap is ln q -> −ln q.
-- Spins (proposed): u_i = artanh(a_i)·(cos θ_i, sin θ_i), with u_⊥ signed. The azimuth-marginalized likelihood is
-  smooth and even in χ_⊥, so flatness in cos θ as a -> 0 is just continuity at the origin. artanh is odd, so the
-  map is smooth at 0 and removes the |χ| = 1 edge; |∂χ/∂u| = sech²(r) tanh(r)/r. The training prior is uniform
-  in the (χ_z, χ_⊥) disk, which is smooth in u. The standard prior (uniform in a and cos θ) has a 1/a spike at the
-  origin.
-- Symmetry group G (8 elements): label swap × the sign of u_1⊥ × the sign of u_2⊥. Train with a random g ∈ G
-  (augmentation after waveform generation). Evaluate q_fold(x) = Σ_g q(g·x) on ln q ≤ 0, u_⊥ ≥ 0. q2 conditions
-  on these folded intrinsics.
+- Spins (proposed): box coordinates χ_z = a cos θ and s = a sin θ / √(1 − χ_z²), both in [−1, 1], with s signed.
+  The azimuth-marginalized likelihood is smooth in (χ_z, χ_⊥² = s²(1 − χ_z²)), so it is smooth and even in s, and
+  a = 0 is the single point (0, 0) (flat in tilt). The edges χ_z = ±1 collapse to the poles. That Jacobian,
+  √(1 − χ_z²), goes into π_train.
+- Rejected (2026-11-14, user): the radial stretch u = artanh(a)·n̂, or any map that sends a wall to infinity.
+  p(a -> 1) ∝ (1 − a)^(α/2 − 1) for a learned tail e^(−αr): a spike or a zero unless α = 2 exactly. dingo's
+  linear-tail splines with a Gaussian base give p(1) = 0.
+- Flow (proposed): q1 lives on the prior box (ln Mc, ln q, χ1z, s1, χ2z, s2, z). Use a box-preserving flow:
+  RQ-spline couplings on a bounded interval (nflows tails=None), permutations only (no LULinear), and a uniform
+  base. Walls get finite, learnable densities and nothing leaks. This needs a custom flow builder in place of
+  dingo's create_nsf_*.
+- Symmetry group G (8 elements): label swap × the sign of s1 × the sign of s2. All 8 map the box onto itself.
+  Train with a random g ∈ G (augmentation after waveform generation). Evaluate q_fold(x) = Σ_g q(g·x) on
+  ln q ≤ 0, s ≥ 0. Don't mirror at a = 1 (no symmetry there). q2 conditions on these folded intrinsics.
 - Augmentation relabels parameters only. Waveforms are always generated with the canonical labels (m1 ≥ m2), and
   the sign of u_⊥ is a coin flip independent of d. So the symmetry is exact by construction and the waveform model
   needs no invariance check. The fold is normalized for any q: Σ_g ∫_{g·D} q = 1, since each g has |det| = 1. The
   training prior must be G-symmetric. This needs a custom training transform that subclasses or patches dingo's
   set_train_transforms.
-- Spin prior for inference: uniform a and uniform cos θ (user, 2026-11-14). In u it is ∝ |sin θ| sech²(r)/r: a 1/r
-  spike at a = 0 and a kink at sin θ = 0. Proposal, not yet agreed: train on a smooth G-symmetric π_train (Gaussian
-  in u) and apply the user's prior analytically. The emulator is L ∝ q_fold/π_train, and posteriors are
+- Spin prior for inference: uniform a and uniform cos θ (user, 2026-11-14). In box coordinates it has a 1/a spike at
+  a = 0 and a kink at s = 0. Proposal, not yet agreed: train on π_train uniform in the box (smooth and G-symmetric)
+  and apply the user's prior analytically. The emulator is L ∝ q_fold/π_train, and posteriors are
   ∝ q_fold · π_user/π_train.
 
 ## Open questions

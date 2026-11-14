@@ -93,16 +93,61 @@ line of tilts, and nothing forces a model to treat them equally.
 Zero spin is now a single point, the origin of the plane. Any density that is smooth there automatically gives every
 tilt the same value as the arrow shrinks to zero.
 
-This leaves two walls, and each gets its own fix.
+This leaves two walls, and they need different treatment.
 
 - **The sideways wall.** As defined, the sideways part is never negative. But the sideways part also has a
   direction around the axis, which we average over. Pointing the sideways part "left" or "right" describes equally
   likely situations. So we let the sideways part take either sign and use a coin flip, exactly as in Section 2.
   Averaging around the axis makes the density mirror-symmetric across the axis, so unfold–learn–fold applies.
-- **The outer wall at *a* = 1.** Spins can't exceed 1, so the arrow lives inside a disk of radius 1, with a circular
-  wall. We remove it by stretching the radius: keep the arrow's direction, but replace its length *a* by a stretched
-  length that grows without limit as *a* approaches 1. (The function used is the inverse hyperbolic tangent. It
-  behaves like *a* itself near zero, so the origin stays smooth.) The disk becomes the whole plane, with no wall left.
+- **The outer wall at *a* = 1.** Spins can't exceed 1, so the arrow lives inside a disk of radius 1. There is no
+  mirror symmetry here: nothing physical says the density should be flat at *a* = 1. So we keep it as a real wall
+  and make the model able to handle walls (Section 5b).
+
+### 5a. Why not stretch the wall away?
+
+A tempting fix is to stretch the disk until it covers the whole plane: keep the arrow's direction, and replace its
+length by one that grows without limit as *a* approaches 1. The wall disappears, but this is fragile.
+
+Near the old wall, a tiny range of *a* is stretched over an infinite range of the new length. The density at *a* = 1
+then depends entirely on how fast the model's density dies off far away, in its "tail". If the tail falls slightly
+too slowly, the density at *a* = 1 shoots up to infinity. If it falls slightly too fast, the density drops to zero.
+Only one exact rate gives a sensible finite value, and a learned model has no reason to hit it. (The models we use
+have tails that fall very fast, so they would push the density at *a* = 1 to zero every time.) The same problem
+comes with any trick that sends a wall off to infinity.
+
+Mirroring (Section 2) doesn't have this problem. It is a local reflection and never involves the far-away tail.
+
+### 5b. Instead: turn the disk into a square, and use a model built for boxes
+
+**Disk to square.** At a given along-axis value, the sideways part can be at most √(1 − along²) before the arrow
+hits the wall. Divide by that maximum:
+
+  sideways fraction *s* = (sideways part) / √(1 − along²), which lies between −1 and 1.
+
+The pair (along-axis part, *s*) now fills the square [−1, 1] × [−1, 1]. It keeps the good properties of the arrow
+picture:
+
+- Zero spin is still a single point, the centre of the square.
+- The quantity we learn is still smooth everywhere, including at the centre. It depends on the sideways part only
+  through its square, which in the new coordinates is *s*² (1 − along²), a plain polynomial.
+- The sideways mirror is now just *s* → −*s*.
+
+At the top and bottom edges of the square (along = ±1, a spin pointing exactly along or against the axis at full
+size), a whole edge corresponds to a single physical point. This squeeze is a known factor of the coordinate change,
+and it goes into the starting distribution of the training examples (Section 7), which is divided out at the end.
+
+**A model built for boxes.** Every coordinate we learn now lives in a box with flat walls. (The overall mass and
+distance coordinates already did, because their starting distributions have hard upper and lower limits.) We use a
+density model that maps the box onto itself, built from flexible one-dimensional curves that start at one wall and
+end at the other. With such a model:
+
+- no probability can spill outside the box, and
+- the density right at each wall is an ordinary finite number that the model learns from the data, rather than
+  something fixed by far-away tail behaviour.
+
+The mirrors from Section 2 still apply on top of this, at equal masses and at *s* = 0, where they make the density
+flat across the mirror, as the physics requires. At the real walls (spin size 1, and the limits on mass and
+distance) the model is free to learn whatever finite value the data support.
 
 ## 6. Putting the pieces together
 
@@ -142,10 +187,12 @@ here.
   point. Otherwise, the coin flips and the starting distribution would disagree. Distributions that treat the two
   objects alike, and that depend on a spin only through its size and the size (not sign) of its tilt, satisfy this.
 - **Its shape in the new coordinates matters.** A common choice is uniform in spin size *a* and uniform in cos *θ*.
-  Redrawn in the arrow plane, this distribution has a sharp spike at the origin and a crease along the axis. A
-  learned density has to reproduce both, and the spike sits at zero spin, exactly where we wanted accuracy.
+  Redrawn in the square coordinates, this distribution has a sharp spike at the centre (zero spin) and a crease
+  along *s* = 0. A learned density has to reproduce both, and the spike sits at zero spin, exactly where we wanted
+  accuracy.
 
   The model's output is ultimately divided by the starting distribution, so the training distribution doesn't have
-  to be the one used for the final scientific answer. One option is to train with a distribution that is smooth in
-  the arrow plane, then convert to the uniform-in-*a*, uniform-in-cos *θ* choice afterwards. The conversion
-  multiplies by the ratio of the two distributions, which is known exactly.
+  to be the one used for the final scientific answer. The simplest option is to train with examples spread
+  **uniformly over the square**. That distribution is smooth, has no spike, and respects all 8 relabelings. We then
+  convert to the uniform-in-*a*, uniform-in-cos *θ* choice afterwards. The conversion multiplies by the ratio of the
+  two distributions, which is known exactly.
