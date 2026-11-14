@@ -14,11 +14,26 @@ the top level.
   work with later versions).
 - Plots: `plot_style.py` is ported unchanged from bbh-pixelpop-constraints (see Conventions).
 
+## Design: factorized posterior (user, 2026-11-14)
+
+q(θ | d) = q1(θ_int | d) · q2(φ12, φ_jl, θ_ext | θ_int, d). These are two DINGO networks, chained at inference.
+The 15 dimensions split 7 + 2 + 6.
+- Training: q1 has `inference_parameters: [7 intrinsics]`. Anything omitted is drawn from the prior and so
+  marginalized. q2 has `inference_parameters: [phi_12, phi_jl, theta_jn, phase, psi, ra, dec, geocent_time]` and
+  `context_parameters: [7 intrinsics]`. This is the generic `data.context_parameters` key (set_train_transforms).
+- Inference: `ChainComposer([FlowFactor(q1), FlowFactor(q2), RAToEventFrame()])` (`dingo.core.inference`, docs
+  `sampling_chains.md`). `sample_and_log_prob` gives the full 15D log q for importance sampling. `log_prob` sums
+  the factors in reverse, so q1's factor alone is the exact intrinsic marginal: the emulator,
+  log L(θ_int | d) = log q1 − log π(θ_int) + const.
+- Caveats (checked 2026-11-14):
+  - Tokenization (DINGO-T1's transformer) raises NotImplementedError with non-empty `context_parameters`, so q2
+    can't use the T1 architecture. T1 is a baseline only.
+  - Physical parameters as context are untested: the only examples are GNPE time proxies and the BNS chirp-mass
+    pin. Run a small test first.
+
 ## Open questions
 
-- DINGO's default `inference_parameters` are chirp_mass, mass_ratio, phase, a_1, a_2, tilt_1, tilt_2, phi_12, phi_jl,
-  theta_jn, luminosity_distance, geocent_time, ra, dec, psi. The target set leaves out the precession azimuths
-  phi_12 and phi_jl, so they would be marginalized too, even though they are intrinsic. Confirm this.
+- phi_12 and phi_jl are intrinsic but sit in q2, so the emulator marginalizes them. Confirm this.
 - z enters through luminosity_distance with a fixed cosmology. Source-frame m1 = m1_det / (1 + z), so the prior and
   the density need the Jacobian.
 - Choice of training prior π(θ_int), waveform model, detectors/PSDs, and whether to use DINGO-T1 as a baseline.
