@@ -193,3 +193,13 @@ The 15 dimensions split 7 + 2 + 6.
   mostly reflects this injection set. Not yet a verdict on B: rerun B (and A) with another seed and more
   injections. Reference points: 10 events (SNR 10.0-69.4), 11 points each, in `eval/reference/events.pkl`.
   7477727 (reference evidences) started 12:56.
+- 2026-11-15 16:25 EST: cancelled 7477727 after 3 h 27 min with 97 of 110 evidences done (the rest are on the
+  SNR 69 and 28 events, the slowest; finished points are kept and the step resumes). Dynesty cost: 1.8-3.3 h and
+  1.7-3.6e5 likelihood calls per point at nlive 500; quoted logZ error 0.16-0.26.
+  **The reference is not trustworthy yet.** Across posterior draws it spreads by 2-40 nats per event, against 1-2 for
+  both emulators, which agree with each other (corr 0.8-0.96 on 6 of 10 events). A's log q and log π explain only
+  21% of its variance on the SNR < 30 events. Injection and likelihood noise normalizations agree (var/2·mean = 0.95
+  over 60 noise draws), so the likely cause is nested sampling missing parts of the multimodal 7D extrinsic
+  posterior and underestimating logZ by several nats, far beyond its quoted error. `plots/reference_residuals_runAB.pdf`
+  is preliminary and reflects this. Validate the reference (repeat runs with other seeds, nlive and samplers) before
+  using it.
