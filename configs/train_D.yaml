@@ -1,0 +1,80 @@
+# Run D (replaces run C; user, 2026-11-15): as run C (disk spin coordinates, symmetry
+# augmentation and fold, same network and budget), with the cored-uniform spin prior
+# (configs/waveforms_D.yaml). Train with scripts/train.py.
+data:
+  waveform_dataset_path: /mnt/ceph/users/jheinzel/dingo-intrinsic-emulator/waveforms/waveforms_D.hdf5
+  train_fraction: 0.95
+  detectors: [H1, L1, V1]
+  extrinsic_prior:
+    dec: default
+    ra: default
+    geocent_time: bilby.core.prior.Uniform(minimum=-0.10, maximum=0.10)
+    psi: default
+    luminosity_distance: bilby.core.prior.Uniform(minimum=100.0, maximum=6000.0)
+  ref_time: 1126259462.391
+  inference_parameters: [ln_chirp_mass, ln_mass_ratio, chi_z_1, chi_perp_1, chi_z_2, chi_perp_2, luminosity_distance]
+  # Fixed standardization (spin std = sqrt(E[a^2]/2) = 0.4138 for CoredUniform(a0=0.05)).
+  # Mirror and chi_z means are exactly 0.
+  standardization:
+    mean: {ln_chirp_mass: 3.4538776, ln_mass_ratio: 0.0, chi_z_1: 0.0, chi_perp_1: 0.0, chi_z_2: 0.0, chi_perp_2: 0.0, luminosity_distance: 3050.0}
+    std: {ln_chirp_mass: 0.6646991, ln_mass_ratio: 1.2005661, chi_z_1: 0.4138, chi_perp_1: 0.4138, chi_z_2: 0.4138, chi_perp_2: 0.4138, luminosity_distance: 1703.1833}
+
+model:
+  posterior_model_type: normalizing_flow
+  posterior_kwargs:
+    num_flow_steps: 30
+    base_transform_kwargs:
+      hidden_dim: 1024
+      num_transform_blocks: 5
+      activation: elu
+      dropout_probability: 0.0
+      norm: BatchNorm
+      num_bins: 8
+      tail_bound: 3.0
+      base_transform_type: rq-coupling
+  embedding_type: resnet
+  embedding_kwargs:
+    output_dim: 128
+    hidden_dims: [1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
+                  1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024]
+    activation: elu
+    dropout: 0.0
+    norm: BatchNorm
+    svd:
+      num_training_samples: 50000
+      num_validation_samples: 10000
+      size: 200
+
+training:
+  stage_0:
+    epochs: 120
+    asd_dataset_path: /mnt/ceph/users/jheinzel/dingo-intrinsic-emulator/asd/asds_O3_fiducial.hdf5
+    freeze_rb_layer: True
+    optimizer:
+      type: adam
+      lr: 5.0e-5
+    scheduler:
+      type: cosine
+      T_max: 120
+    batch_size: 4096
+  stage_1:
+    epochs: 60
+    asd_dataset_path: /mnt/ceph/users/jheinzel/dingo-intrinsic-emulator/asd/asds_O3.hdf5
+    freeze_rb_layer: False
+    optimizer:
+      type: adam
+      lr: 1.0e-5
+    scheduler:
+      type: cosine
+      T_max: 60
+    batch_size: 4096
+
+local:
+  device: cuda
+  num_workers: 20   # 30 ran out of 128 GB (jobs 7475307/8)
+  runtime_limits:
+    max_time_per_run: 165600   # 46 h; resume from checkpoint if the job's limit is hit
+    max_epochs_per_run: 500
+  checkpoint_epochs: 10
+  leave_waveforms_on_disk: False
+  local_cache_path: /tmp

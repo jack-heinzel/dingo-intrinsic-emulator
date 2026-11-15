@@ -14,6 +14,7 @@ q_fold and pi_train is the augmented training prior; that prior is uniform in
 (ln Mc, ln q, d_L) and proportional to J(u, v) for each spin, so
 log pi_train = log J(u1, v1) + log J(u2, v2) + const.
 """
+import os
 import pickle
 
 import numpy as np
@@ -23,7 +24,8 @@ from emulator import box_reparam as br
 
 DATA = "/mnt/ceph/users/jheinzel/dingo-intrinsic-emulator"
 ASD_PATH = f"{DATA}/asd/asds_O3.hdf5"
-MODEL_PATH = {r: f"{DATA}/training/run_{r}/model_stage_1.pt" for r in "ABC"}
+MODEL_PATH = {r: f"{DATA}/training/run_{r}/model_stage_1.pt" for r in "ABCD"}
+DISK_RUNS = ("C", "D")  # Cartesian spin chart; they differ only in the spin prior
 PHYS = ["chirp_mass", "mass_ratio", "a_1", "a_2", "tilt_1", "tilt_2", "luminosity_distance"]
 EXTRINSIC = ["ra", "dec", "psi", "theta_jn", "phase", "phi_12", "phi_jl"]  # integrated out
 # Prior support shared by both runs (configs/waveforms_*.yaml, configs/train_*.yaml).
@@ -46,8 +48,9 @@ def load_model(path, device="cuda"):
 
 def run_of(model_or_metadata):
     md = getattr(model_or_metadata, "metadata", model_or_metadata)
-    params = md["train_settings"]["data"]["inference_parameters"]
-    return {"box": "B", "disk": "C", None: "A"}[br.chart_of(params)]
+    # the run letter is in the waveform dataset name (waveforms_<run>.hdf5)
+    path = md["train_settings"]["data"]["waveform_dataset_path"]
+    return os.path.basename(path)[len("waveforms_"):-len(".hdf5")]
 
 
 def in_bounds(phys):
@@ -119,7 +122,7 @@ def samples_to_phys(samples, run):
     cols = {k: np.asarray(samples[k]) for k in samples}
     if run == "B":
         return box_to_phys(cols)
-    if run == "C":
+    if run in DISK_RUNS:
         return disk_to_phys(cols)
     return {k: cols[k].astype(float) for k in PHYS}
 
@@ -161,7 +164,7 @@ def log_prior_train(sampler, run, phys):
     if run == "A":
         prior = sampler.context.prior
         return sum(np.asarray(prior[k].ln_prob(np.asarray(phys[k])), float) for k in PHYS)
-    if run == "C":
+    if run in DISK_RUNS:
         # LogUniform masses and uniform d_L are constant in (ln Mc, ln q, d_L); each spin
         # contributes its density in the disk, smooth through a = 0.
         prior = sampler.context.prior

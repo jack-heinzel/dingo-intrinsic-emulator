@@ -79,7 +79,7 @@ The 15 dimensions split 7 + 2 + 6.
   prior is applied analytically afterwards. The emulator is L ∝ q_fold/π_train, and posteriors are
   ∝ q_fold · π_user/π_train.
 
-## Run C: disk coordinates and more training at small spin (user, 2026-11-15)
+## Runs C and D: disk coordinates and more training at small spin (user, 2026-11-15)
 
 - Drop the square: with dingo's default Gaussian-base flow the square brings nothing (it was for the deferred
   box-preserving flow). Spins are Cartesian (chi_z_i, chi_perp_i): no map, no Jacobian, same relabeling group and
@@ -88,6 +88,13 @@ The 15 dimensions split 7 + 2 + 6.
   a 50/50 mix of uniform-in-disk and a round Gaussian at the origin. Smooth in the disk, ~20% of samples at
   a < 0.1 (B: ~1%, A: ~10%). log pi_train = sum_i log[p(a_i)/(pi a_i)], finite at a = 0. Masses as B
   (LogUniform), A's SVD basis, same network and budget. Configs: `configs/{waveforms,train}_C.yaml`.
+- Run D replaces C (user, 2026-11-15; C cancelled before training): spin prior
+  `emulator.priors.CoredUniform(a0=0.05)`, p(a) ∝ a/sqrt(a^2 + a0^2). That is uniform in a, like the inference prior,
+  above the core, and ∝ a below it. The disk density ∝ 1/sqrt(a^2 + a0^2) is smooth, with a mild peak (~10x, about
+  2.3 nats) of width a0. 2.2% of draws are below a = 0.05 and 6.6% below 0.1 (uniform a: 5.1%, 10.1%). The tilt
+  stays uniform: uniform cos θ would add a |sin θ| valley along aligned spins, and the weight to it is ∝ sin θ ≤ 1. The
+  user's literal form, disk density ∝ a/(a^2 + a0^2), has the same p(a) shape but a cone (a kink and a zero) at the
+  origin, hence the smooth variant. Configs: `configs/{waveforms,train}_D.yaml`. Spin std 0.4138.
 - Why: in the reference comparison B's largest errors were where its prior was thin (high Mc with a1 near 0),
   and the injections came from A's prior. Weighting B's loss to the user's prior was rejected (user asked;
   ESS ~17% per batch, as low as 1%, and the 1/a spike returns to the flow's target).
@@ -225,3 +232,9 @@ The 15 dimensions split 7 + 2 + 6.
 - 2026-11-15 18:05 EST: submitted (user approved) 7478827 (`slurm/gen_waveforms.sbatch C`), 7478828 (train C,
   afterok 7478827) and 7478829 (`SEED=1 NINJ=2000 slurm/eval_calib.sbatch A B`: calibration rerun, outputs
   `eval/calibration_{A,B}_seed1.pkl`).
+- 2026-11-15 18:16 EST: cancelled 7478828 (train C) after 4 min (user: use the cored-uniform prior instead). 7478827
+  COMPLETED in 5 min; `waveforms/waveforms_C.hdf5` (6.5 GB) is now unused. Run D code and configs: CoredUniform is
+  normalized, its inverse CDF is exact to 2e-16, KS p = 0.084, and it is flat at 1.06 above the core. A 20-waveform
+  test generates. `emulator/evaluation.py` now takes the run letter from the waveform dataset name and treats C and D
+  alike; this was edited while 7478829 ran, and its run_of still returns A and B correctly. 7478829 wrote
+  `eval/calibration_A_seed1.pkl`, and B is in progress.

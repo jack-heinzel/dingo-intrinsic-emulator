@@ -9,6 +9,49 @@ import numpy as np
 from bilby.core.prior import Prior
 
 
+class CoredUniform(Prior):
+    """Spin magnitude a in [0, maximum] with p(a) ∝ a / sqrt(a^2 + a0^2): uniform in a (the
+    inference prior) for a >> a0, and ∝ a (uniform in the disk) for a << a0.
+
+    With the tilt uniform in [0, pi], the density of (chi_z, chi_perp) in the disk is
+    ∝ 1 / sqrt(a^2 + a0^2): a function of a^2, so smooth, with a mild peak of width ~a0 at the
+    origin instead of the 1/a spike of a uniform-a prior. CDF and inverse are closed form.
+    a0 = 0.05: 2.2% of draws below a = 0.05, 6.6% below 0.1 (uniform a: 5.1%, 10.1%).
+    """
+
+    def __init__(self, a0=0.05, minimum=0.0, maximum=0.99, name=None, latex_label=None,
+                 unit=None, boundary=None):
+        super().__init__(name=name, latex_label=latex_label, unit=unit, minimum=minimum,
+                         maximum=maximum, boundary=boundary)
+        if minimum != 0.0:
+            raise ValueError("CoredUniform is defined on [0, maximum].")
+        self.a0 = a0
+        self._norm = np.sqrt(maximum ** 2 + a0 ** 2) - a0
+
+    def prob(self, val):
+        a = np.asarray(val, dtype=float)
+        p = a / np.sqrt(a ** 2 + self.a0 ** 2) / self._norm
+        return np.where((a >= 0) & (a <= self.maximum), p, 0.0)
+
+    def ln_prob(self, val):
+        with np.errstate(divide="ignore"):
+            return np.log(self.prob(val))
+
+    def cdf(self, val):
+        a = np.clip(np.asarray(val, dtype=float), 0.0, self.maximum)
+        return (np.sqrt(a ** 2 + self.a0 ** 2) - self.a0) / self._norm
+
+    def rescale(self, val):
+        r = np.asarray(val, dtype=float) * self._norm + self.a0
+        return np.sqrt(np.clip(r ** 2 - self.a0 ** 2, 0.0, None))
+
+    def disk_ln_density(self, a):
+        """log of p(a) / (pi a), the density of (chi_z, chi_perp) with uniform tilt; smooth
+        through a = 0. Up to the constant -log(pi)."""
+        a = np.asarray(a, dtype=float)
+        return -0.5 * np.log(a ** 2 + self.a0 ** 2) - np.log(self._norm)
+
+
 class SpinMixture(Prior):
     """Spin magnitude a in [0, maximum] such that, with the tilt uniform in [0, pi], the
     spin vector (chi_z, chi_perp) is a mixture in the (half-)disk of

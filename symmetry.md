@@ -259,8 +259,17 @@ Everything that mattered survives:
 What remains is the leak at the outer edge of the disk (spin magnitude 0.99). It is small (about 0.2% of the
 model's samples) and the same as for the other runs.
 
+(Run D replaced run C before C was trained: see the note at the end of this section.)
+
 The training distribution changes too (section 7). Spread evenly over the disk, very few training examples have
 small spins: only about 1 in 100 has magnitude below 0.1. Run C mixes two smooth pieces half and half: even over the
 disk, plus a narrow round bump centred on zero spin. About 1 in 5 examples is then below 0.1. Both pieces are smooth
 and treat every direction the same way, so there is still no spike for the model to learn, and the conversion to
 the final uniform-in-*a*, uniform-in-cos *θ* choice is still an exact multiplication afterwards.
+
+**Run D's training distribution.** Instead of the bump, run D trains with spin magnitudes spread evenly, like the
+final choice we actually want, except very close to zero. Spread evenly in magnitude means the density *in the disk*
+grows like 1/(magnitude) towards the centre, which is a spike. So inside a small core (magnitude below about 0.05)
+the density is softened. The density in the disk is 1/√(magnitude² + 0.05²): equal to the spike far from the centre,
+and a gentle rounded peak at the centre. Training then matches the final distribution almost everywhere, and the
+model never has to learn a spike.

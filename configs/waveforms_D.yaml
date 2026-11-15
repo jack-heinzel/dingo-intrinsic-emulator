@@ -1,0 +1,38 @@
+# Run D waveform dataset. As run C (log-uniform Mc and q, tilt uniform, A's SVD basis), but
+# each spin magnitude is cored-uniform, p(a) ∝ a / sqrt(a^2 + 0.05^2): uniform in a like the
+# inference prior above the core, and smooth in the disk (density ∝ 1/sqrt(a^2 + a0^2)).
+# Needs the repo on PYTHONPATH (slurm/gen_waveforms.sbatch sets it).
+domain:
+  type: UniformFrequencyDomain
+  f_min: 20.0
+  f_max: 1024.0
+  delta_f: 0.125
+
+waveform_generator:
+  approximant: IMRPhenomXPHM
+  f_ref: 20.0
+  spin_conversion_phase: 0.0
+
+intrinsic_prior:
+  chirp_mass: bilby.core.prior.LogUniform(minimum=10.0, maximum=100.0)
+  mass_ratio: bilby.core.prior.LogUniform(minimum=0.125, maximum=1.0)
+  a_1: emulator.priors.CoredUniform(a0=0.05, maximum=0.99)
+  a_2: emulator.priors.CoredUniform(a0=0.05, maximum=0.99)
+  tilt_1: bilby.core.prior.Uniform(minimum=0.0, maximum=3.141592653589793)
+  tilt_2: bilby.core.prior.Uniform(minimum=0.0, maximum=3.141592653589793)
+  phi_12: default
+  phi_jl: default
+  theta_jn: default
+  phase: default
+  luminosity_distance: 100.0
+  geocent_time: 0.0
+
+num_samples: 1000000
+
+compression:
+  # Run A's 200-mode basis (user, 2026-11-14: same compression as A), extracted from
+  # waveforms_A.hdf5. dingo loads it instead of training a new one, so no mismatch
+  # check is stored; on 2000 run-B-prior waveforms it gives median 5e-7, 99% 3e-3.
+  svd:
+    file: /mnt/ceph/users/jheinzel/dingo-intrinsic-emulator/waveforms/svd_A.hdf5
+  whitening: aLIGO_ZERO_DET_high_P_asd.txt
