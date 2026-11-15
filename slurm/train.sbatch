@@ -12,7 +12,7 @@
 
 set -euo pipefail
 RUN=${1:?usage: sbatch slurm/train.sbatch A|B}
-export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONUNBUFFERED=1
 REPO=/mnt/home/jheinzel/dingo
 DATA=/mnt/ceph/users/jheinzel/dingo-intrinsic-emulator
 DIR=$DATA/training/run_$RUN
