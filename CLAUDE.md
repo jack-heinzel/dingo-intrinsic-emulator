@@ -161,3 +161,9 @@ The 15 dimensions split 7 + 2 + 6.
   with A's basis), 7475710 (train A) and 7475711 (train B, afterok 7475709). Training uses the new resources
   (h100-sxm5, 24 cores, 360 GB, 20 workers). The embedding's first-layer SVD initialization is still computed per
   run from each run's own waveforms.
+- 2026-11-14 21:20 EST: 7475709 COMPLETED in 5 min. waveforms_B.hdf5 regenerated; its V is identical to svd_A.hdf5,
+  mean a1 = 0.660. IMRPhenomXPHM warned 16 times (out of 1M) that multibanding is "likely numerically unstable" for
+  a few strongly precessing, unequal-mass points; left as is.
+- 2026-11-14 21:45 EST: 7475710 (A, workergpu212) and 7475711 (B, workergpu214) running since ~21:30. A's first
+  stage-0 epoch: 2.5 min training, data loader not the bottleneck (0.03 s vs 0.40 s network per batch). Peak RSS
+  so far: A 166 GiB, B 111 GiB (limit 360 GB).
