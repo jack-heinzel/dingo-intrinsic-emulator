@@ -138,3 +138,11 @@ The 15 dimensions split 7 + 2 + 6.
 - 2026-11-14 18:37 EST: submitted (user approved) data job 7475306 (`slurm/gen_data.sbatch`, gen, 1 node, 6 h)
   and training jobs 7475307 (run A) and 7475308 (run B) (`slurm/train.sbatch`, 1 H100 each, 2 d), afterok on 7475306.
   Logs: `/mnt/ceph/users/jheinzel/dingo-intrinsic-emulator/logs/`.
+- 2026-11-14 19:47 EST: data job 7475306 COMPLETED in 1 h 09 min (worker5090, 128 cores). `waveforms/waveforms_{A,B}.hdf5`
+  (1M each, 6.5 GB, 200 SVD modes) and `asd/asds_O3.hdf5` (300 PSDs each for H1/L1/V1, GPS 1238166018-1269361170,
+  0 of 16 download workers failed). Checks: no non-finite or empty waveforms or ASDs; priors as configured (B: mean
+  a = 0.660, A: 0.495); band-median ASDs match the fiducial PSD. SVD mismatch at n = 200 (validation set from each
+  run's own prior): A median 2e-8, 99% 2e-4, max 1e-2; B median 9e-7, 99% 2e-3, max 4e-2. B is worse because its
+  LogUniform Mc prior puts more waveforms at low Mc (median 32 vs 71), which are longer. This is a confound for the
+  A/B comparison; if B underperforms at low Mc, raise the SVD size before blaming the coordinates.
+  Training jobs 7475307 (A) and 7475308 (B) now pending (Priority).
