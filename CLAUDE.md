@@ -183,3 +183,13 @@ The 15 dimensions split 7 + 2 + 6.
   (estimated from login-node runs that shared one core).
 - 2026-11-15 12:11 EST: submitted (user approved) 7477726 (`slurm/eval_gpu.sbatch`) and 7477727
   (`slurm/eval_reference.sbatch`, afterok 7477726). Outputs: `eval/`.
+- 2026-11-15 12:56 EST: 7477726 COMPLETED (45 min). Calibration (`plots/pp_runAB.pdf`, 1000 injections each from
+  the run's own prior, 5000 samples): A passes (KS p: Mc 0.013, others 0.17-0.87, joint level 0.68, combined
+  0.20); B fails a_1 (0.001) and the joint level (0.010), combined 0.003, others 0.03-1.0. Leakage outside the
+  prior box: median 0.2% of samples in both. But B's injected a_1 values themselves fail a KS test against B's own
+  prior (p = 0.0002; the other 29 injected-parameter tests across A and B pass, lowest 0.037). A 1500-draw rerun of
+  the same injection code without networks matches the prior (p = 0.95), so this looks like a chance fluctuation.
+  Spin magnitudes are weakly measured, so their ranks track the prior CDF of the truth, and the a_1 P-P failure
+  mostly reflects this injection set. Not yet a verdict on B: rerun B (and A) with another seed and more
+  injections. Reference points: 10 events (SNR 10.0-69.4), 11 points each, in `eval/reference/events.pkl`.
+  7477727 (reference evidences) started 12:56.
