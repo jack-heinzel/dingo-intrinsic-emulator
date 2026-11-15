@@ -157,3 +157,7 @@ The 15 dimensions split 7 + 2 + 6.
   2e-3 (Mc < 20: 8.7e-5, 3e-3). So the compression is identical, but B's low-Mc waveforms are compressed about 2×
   worse than before. The quality gap between the runs comes from the prior, not the basis.
   waveforms_B.hdf5 must be regenerated (`slurm/gen_waveforms.sbatch B`; not submitted yet).
+- 2026-11-14 21:14 EST: submitted (user approved) 7475709 (`slurm/gen_waveforms.sbatch B`: regenerate waveforms_B.hdf5
+  with A's basis), 7475710 (train A) and 7475711 (train B, afterok 7475709). Training uses the new resources
+  (h100-sxm5, 24 cores, 360 GB, 20 workers). The embedding's first-layer SVD initialization is still computed per
+  run from each run's own waveforms.
