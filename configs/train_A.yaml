@@ -67,7 +67,7 @@ training:
 
 local:
   device: cuda
-  num_workers: 30
+  num_workers: 20   # 30 ran out of 128 GB (jobs 7475307/8)
   runtime_limits:
     max_time_per_run: 165600   # 46 h; resume from checkpoint if the job's limit is hit
     max_epochs_per_run: 500

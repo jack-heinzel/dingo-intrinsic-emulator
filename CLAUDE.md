@@ -146,3 +146,14 @@ The 15 dimensions split 7 + 2 + 6.
   LogUniform Mc prior puts more waveforms at low Mc (median 32 vs 71), which are longer. This is a confound for the
   A/B comparison; if B underperforms at low Mc, raise the SVD size before blaming the coordinates.
   Training jobs 7475307 (A) and 7475308 (B) now pending (Priority).
+- 2026-11-14 20:42/20:44 EST: training jobs 7475308 (B) and 7475307 (A) OUT_OF_MEMORY (128 GB) at the start of
+  epoch 1, after 12-15 min. Cause: 30 data-loader workers each prefetching two 4096-sample batches (~1.2 GB each).
+  Fix: num_workers 20, and `slurm/train.sbatch` now asks for 1 H100 on the 4-GPU Genoa nodes (`-C h100-sxm5`) with
+  24 cores and 360 GB (one GPU's share of the node). Not resubmitted yet (user).
+- 2026-11-14 ~21:20 EST: run B now compresses with run A's SVD basis (user: same compression as A).
+  `waveforms/svd_A.hdf5` is extracted from waveforms_A.hdf5, and `configs/waveforms_B.yaml` loads it through
+  `compression.svd.file`. A 20-waveform test gives a V identical to A's. On 2000 uncompressed run-B-prior
+  waveforms: A's basis gives median 5e-7, 99% 3e-3 (Mc < 20: median 1.8e-4, 99% 6e-3); B's own basis gives 9e-7,
+  2e-3 (Mc < 20: 8.7e-5, 3e-3). So the compression is identical, but B's low-Mc waveforms are compressed about 2×
+  worse than before. The quality gap between the runs comes from the prior, not the basis.
+  waveforms_B.hdf5 must be regenerated (`slurm/gen_waveforms.sbatch B`; not submitted yet).

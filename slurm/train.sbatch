@@ -1,11 +1,11 @@
 #!/bin/bash
-# Train run A or B on one H100:  sbatch slurm/train.sbatch A   (or B)
+# Train run A or B on one H100 (4-GPU Genoa nodes; 24 cores and 360 GB = one GPU's share):  sbatch slurm/train.sbatch A   (or B)
 # Resumes from model_latest.pt if the run directory already has one.
 #SBATCH -p gpu
 #SBATCH --gpus=1
-#SBATCH -C h100
-#SBATCH -c 32
-#SBATCH --mem=128G
+#SBATCH -C h100-sxm5
+#SBATCH -c 24
+#SBATCH --mem=360G
 #SBATCH -t 2-00:00:00
 #SBATCH -J dingo-train
 #SBATCH -o /mnt/ceph/users/jheinzel/dingo-intrinsic-emulator/logs/train_%x_%j.log

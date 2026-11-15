@@ -31,8 +31,9 @@ intrinsic_prior:
 num_samples: 1000000
 
 compression:
+  # Run A's 200-mode basis (user, 2026-11-14: same compression as A), extracted from
+  # waveforms_A.hdf5. dingo loads it instead of training a new one, so no mismatch
+  # check is stored; on 2000 run-B-prior waveforms it gives median 5e-7, 99% 3e-3.
   svd:
-    size: 200
-    num_training_samples: 50000
-    num_validation_samples: 10000
+    file: /mnt/ceph/users/jheinzel/dingo-intrinsic-emulator/waveforms/svd_A.hdf5
   whitening: aLIGO_ZERO_DET_high_P_asd.txt
