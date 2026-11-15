@@ -172,3 +172,12 @@ The 15 dimensions split 7 + 2 + 6.
   different coordinates and priors). Stage 1 gained 0.12 (A) and 0.15 (B) nats over stage 0. Test ≈ train at the end
   (no overfitting), and losses were still falling when the cosine schedule ended, so a longer schedule or more
   waveforms should help. Intermediate checkpoints model_010..180.pt take ~180 GB in total.
+- 2026-11-15 ~12:00 EST: deleted the intermediate checkpoints model_010..180.pt of both runs (user), ~180 GB; kept
+  model_stage_0/stage_1/latest. Evaluation scripts written (user): `emulator/evaluation.py`,
+  `scripts/eval_calibration.py` (P-P + joint HPD level + prior-box leakage, 1000 injections from each run's own
+  prior), `scripts/eval_reference.py` (dynesty evidence over the 7 non-emulated parameters, time marginalized with
+  n_fft 16, at the truth plus posterior draws from A and B), `slurm/eval_gpu.sbatch`, `slurm/eval_reference.sbatch`.
+  Tested on the login node: box <-> physical round trip 4e-14, all 8 relabelings fold to the same point, run-A prior
+  density matches bilby's closed form, time-marginalized likelihood 28 ms per call (n_fft 16 converged to 1e-3
+  vs 64). Not yet run on a GPU. A reference evidence is expensive: ~2-3 h per point on one core at nlive 500
+  (estimated from login-node runs that shared one core).
