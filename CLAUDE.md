@@ -181,3 +181,5 @@ The 15 dimensions split 7 + 2 + 6.
   density matches bilby's closed form, time-marginalized likelihood 28 ms per call (n_fft 16 converged to 1e-3
   vs 64). Not yet run on a GPU. A reference evidence is expensive: ~2-3 h per point on one core at nlive 500
   (estimated from login-node runs that shared one core).
+- 2026-11-15 12:11 EST: submitted (user approved) 7477726 (`slurm/eval_gpu.sbatch`) and 7477727
+  (`slurm/eval_reference.sbatch`, afterok 7477726). Outputs: `eval/`.
