@@ -11,6 +11,7 @@
 
 set -euo pipefail
 export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONUNBUFFERED=1
+export PYTHONPATH=/mnt/home/jheinzel/dingo  # custom priors (emulator.priors) in configs
 REPO=/mnt/home/jheinzel/dingo
 echo "start $(TZ=America/New_York date)  node $(hostname)  cores $SLURM_CPUS_ON_NODE"
 $REPO/.venv/bin/python $REPO/scripts/eval_reference.py reference --nproc "$SLURM_CPUS_ON_NODE" --nlive "${NLIVE:-500}"

@@ -242,3 +242,25 @@ here.
   **uniformly over the square**. That distribution is smooth, has no spike, and respects all 8 relabelings. We then
   convert to the uniform-in-*a*, uniform-in-cos *θ* choice afterwards. The conversion multiplies by the ratio of the
   two distributions, which is known exactly.
+
+## 8. Update (November 15): keep the disk, drop the square
+
+The square in section 5b was there for one reason: a model whose outputs can never leave a box. The models we
+actually trained don't have that property. They start from a bell curve over all real numbers and can put a little
+probability anywhere. To them, a square is no more natural a shape than a disk. So the square buys nothing, and the
+next run (run C) describes each spin directly by its two arrow components, the "up" part and the "sideways" part,
+inside the disk.
+
+Everything that mattered survives:
+- Zero spin is still a single point, so there is still no "zero spin" problem (section 5).
+- The coin flip on the sign of the sideways part is unchanged (section 3), and so is the label swap (section 4).
+- With no square map there is no stretching factor at all. Folding back works exactly as before.
+
+What remains is the leak at the outer edge of the disk (spin magnitude 0.99). It is small (about 0.2% of the
+model's samples) and the same as for the other runs.
+
+The training distribution changes too (section 7). Spread evenly over the disk, very few training examples have
+small spins: only about 1 in 100 has magnitude below 0.1. Run C mixes two smooth pieces half and half: even over the
+disk, plus a narrow round bump centred on zero spin. About 1 in 5 examples is then below 0.1. Both pieces are smooth
+and treat every direction the same way, so there is still no spike for the model to learn, and the conversion to
+the final uniform-in-*a*, uniform-in-cos *θ* choice is still an exact multiplication afterwards.

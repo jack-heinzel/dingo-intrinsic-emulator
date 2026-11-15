@@ -13,6 +13,7 @@
 
 set -euo pipefail
 export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONUNBUFFERED=1
+export PYTHONPATH=/mnt/home/jheinzel/dingo  # custom priors (emulator.priors) in configs
 REPO=/mnt/home/jheinzel/dingo
 PY=$REPO/.venv/bin/python
 NEV=${NEV:-10} NPT=${NPT:-10}

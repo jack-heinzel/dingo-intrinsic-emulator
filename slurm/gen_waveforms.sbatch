@@ -11,6 +11,7 @@
 set -euo pipefail
 RUN=${1:?usage: sbatch slurm/gen_waveforms.sbatch A|B}
 export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1
+export PYTHONPATH=/mnt/home/jheinzel/dingo  # custom priors (emulator.priors) in configs
 REPO=/mnt/home/jheinzel/dingo
 DATA=/mnt/ceph/users/jheinzel/dingo-intrinsic-emulator
 echo "start $(TZ=America/New_York date)  node $(hostname)  cores $SLURM_CPUS_ON_NODE"

@@ -23,7 +23,7 @@ from emulator import box_reparam as br
 
 DATA = "/mnt/ceph/users/jheinzel/dingo-intrinsic-emulator"
 ASD_PATH = f"{DATA}/asd/asds_O3.hdf5"
-MODEL_PATH = {r: f"{DATA}/training/run_{r}/model_stage_1.pt" for r in "AB"}
+MODEL_PATH = {r: f"{DATA}/training/run_{r}/model_stage_1.pt" for r in "ABC"}
 PHYS = ["chirp_mass", "mass_ratio", "a_1", "a_2", "tilt_1", "tilt_2", "luminosity_distance"]
 EXTRINSIC = ["ra", "dec", "psi", "theta_jn", "phase", "phi_12", "phi_jl"]  # integrated out
 # Prior support shared by both runs (configs/waveforms_*.yaml, configs/train_*.yaml).
@@ -47,7 +47,7 @@ def load_model(path, device="cuda"):
 def run_of(model_or_metadata):
     md = getattr(model_or_metadata, "metadata", model_or_metadata)
     params = md["train_settings"]["data"]["inference_parameters"]
-    return "B" if "u_1" in params else "A"
+    return {"box": "B", "disk": "C", None: "A"}[br.chart_of(params)]
 
 
 def in_bounds(phys):
@@ -89,9 +89,39 @@ def phys_to_box(phys):
     return out
 
 
+def disk_to_phys(disk):
+    """Run-C samples (Cartesian spins) -> folded physical parameters. Spins outside the
+    disk (flow leakage) are kept and fail in_bounds through a > A_MAX."""
+    lnq = np.asarray(disk["ln_mass_ratio"], float)
+    z1, p1, z2, p2 = (np.asarray(disk[k], float) for k in br.DISK_KEYS[2:])
+    swap = lnq > 0
+    lnq = np.where(swap, -lnq, lnq)
+    z1, z2 = np.where(swap, z2, z1), np.where(swap, z1, z2)
+    p1, p2 = np.where(swap, p2, p1), np.where(swap, p1, p2)
+    a1, t1 = br.disk_to_spin(z1, p1)
+    a2, t2 = br.disk_to_spin(z2, p2)
+    return dict(chirp_mass=np.exp(np.asarray(disk["ln_chirp_mass"], float)), mass_ratio=np.exp(lnq),
+                a_1=a1, tilt_1=t1, a_2=a2, tilt_2=t2,
+                luminosity_distance=np.asarray(disk["luminosity_distance"], float))
+
+
+def phys_to_disk(phys):
+    """Physical parameters -> canonical run-C point (ln q <= 0, chi_perp >= 0)."""
+    out = dict(ln_chirp_mass=np.log(phys["chirp_mass"]), ln_mass_ratio=np.log(phys["mass_ratio"]),
+               luminosity_distance=np.asarray(phys["luminosity_distance"], float))
+    for i in (1, 2):
+        z, p = br.spin_to_disk(np.asarray(phys[f"a_{i}"], float), np.asarray(phys[f"tilt_{i}"], float))
+        out[f"chi_z_{i}"], out[f"chi_perp_{i}"] = z, np.abs(p)
+    return out
+
+
 def samples_to_phys(samples, run):
     cols = {k: np.asarray(samples[k]) for k in samples}
-    return box_to_phys(cols) if run == "B" else {k: cols[k].astype(float) for k in PHYS}
+    if run == "B":
+        return box_to_phys(cols)
+    if run == "C":
+        return disk_to_phys(cols)
+    return {k: cols[k].astype(float) for k in PHYS}
 
 
 # --- densities ----------------------------------------------------------------------------
@@ -118,8 +148,8 @@ def log_q_phys(sampler, run, phys):
     """log q at physical points, in the run's own coordinates; q_fold for run B."""
     if run == "A":
         return _log_q(sampler, {k: phys[k] for k in PHYS})
-    box = phys_to_box(phys)
-    keys = list(br.BOX_KEYS) + ["luminosity_distance"]
+    box = phys_to_box(phys) if run == "B" else phys_to_disk(phys)
+    keys = list(br.BOX_KEYS if run == "B" else br.DISK_KEYS) + ["luminosity_distance"]
     theta = np.stack([box[k] for k in keys], axis=-1)
     index = {k: i for i, k in enumerate(keys)}
     return br.fold_log_prob(lambda th: _log_q(sampler, {k: th[:, i] for k, i in index.items()}),
@@ -131,6 +161,11 @@ def log_prior_train(sampler, run, phys):
     if run == "A":
         prior = sampler.context.prior
         return sum(np.asarray(prior[k].ln_prob(np.asarray(phys[k])), float) for k in PHYS)
+    if run == "C":
+        # LogUniform masses and uniform d_L are constant in (ln Mc, ln q, d_L); each spin
+        # contributes its density in the disk, smooth through a = 0.
+        prior = sampler.context.prior
+        return sum(prior[f"a_{i}"].disk_ln_density(np.asarray(phys[f"a_{i}"], float)) for i in (1, 2))
     box = phys_to_box(phys)
     return (br.log_jacobian_square_to_disk(box["u_1"], box["v_1"])
             + br.log_jacobian_square_to_disk(box["u_2"], box["v_2"]))

@@ -116,7 +116,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("sample")
-    s.add_argument("run", choices=["A", "B"])
+    s.add_argument("run", choices=["A", "B", "C"])
     s.add_argument("--n-inj", type=int, default=1000)
     s.add_argument("--n-samples", type=int, default=5000)
     s.add_argument("--seed", type=int, default=0)

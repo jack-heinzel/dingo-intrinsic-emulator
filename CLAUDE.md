@@ -79,6 +79,19 @@ The 15 dimensions split 7 + 2 + 6.
   prior is applied analytically afterwards. The emulator is L ∝ q_fold/π_train, and posteriors are
   ∝ q_fold · π_user/π_train.
 
+## Run C: disk coordinates and more training at small spin (user, 2026-11-15)
+
+- Drop the square: with dingo's default Gaussian-base flow the square brings nothing (it was for the deferred
+  box-preserving flow). Spins are Cartesian (chi_z_i, chi_perp_i): no map, no Jacobian, same relabeling group and
+  fold (`emulator/box_reparam.py`, "disk" chart). symmetry.md section 8.
+- Training spin prior with much more mass near a = 0 (user): `emulator.priors.SpinMixture(weight=0.5, sigma=0.1)`,
+  a 50/50 mix of uniform-in-disk and a round Gaussian at the origin. Smooth in the disk, ~20% of samples at
+  a < 0.1 (B: ~1%, A: ~10%). log pi_train = sum_i log[p(a_i)/(pi a_i)], finite at a = 0. Masses as B
+  (LogUniform), A's SVD basis, same network and budget. Configs: `configs/{waveforms,train}_C.yaml`.
+- Why: in the reference comparison B's largest errors were where its prior was thin (high Mc with a1 near 0),
+  and the injections came from A's prior. Weighting B's loss to the user's prior was rejected (user asked;
+  ESS ~17% per batch, as low as 1%, and the 1/a spike returns to the flow's target).
+
 ## Runs A and B: pilot comparison (user, 2026-11-14)
 
 - Both runs train q1 only. They share the embedding (Stephen's suggestion: the DenseResNet has no funnel, 24
@@ -203,3 +216,9 @@ The 15 dimensions split 7 + 2 + 6.
   posterior and underestimating logZ by several nats, far beyond its quoted error. `plots/reference_residuals_runAB.pdf`
   is preliminary and reflects this. Validate the reference (repeat runs with other seeds, nlive and samplers) before
   using it.
+- 2026-11-15 ~17:30 EST: run C code and configs. Tests on the login node: both charts round-trip augmented ->
+  folded physical to 4e-14, and all 8 relabelings fold back; `BoxReparamAugment` unchanged for B; SpinMixture is
+  normalized, KS p = 0.17 against its own CDF, 20% of draws below a = 0.1. Smoke run (300 waveforms, tiny
+  networks, one CPU epoch per stage) passes. Wiring check on the tiny C model: `composer.log_prob` at the sampler's
+  own samples matches its log_prob column to 1e-5, and the fold equals the direct 8-image logsumexp exactly. B
+  shares this code, so B's emulator values are not a wiring artefact.

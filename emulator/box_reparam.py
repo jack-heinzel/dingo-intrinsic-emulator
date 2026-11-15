@@ -1,4 +1,9 @@
-"""Reparameterized q1 coordinates with symmetry augmentation (run B). See symmetry.md.
+"""Reparameterized q1 coordinates with symmetry augmentation (runs B and C). See symmetry.md.
+
+Run C uses the "disk" chart instead of the square: Cartesian spin components
+(chi_z_i, chi_perp_i) in place of (u_i, v_i), with the same relabeling group and fold. With
+dingo's default (Gaussian-base, unbounded) flow, the square brings nothing, so the disk
+chart drops the map and its Jacobian (user, 2026-11-15). The notes below describe run B.
 
 Coordinates learned by the flow (all standard dingo machinery otherwise):
     ln_chirp_mass, ln_mass_ratio, u_1, v_1, u_2, v_2, luminosity_distance
@@ -64,36 +69,70 @@ def square_to_spin(u, v):
     return A_MAX * np.hypot(x, y), np.arctan2(np.abs(y), x)
 
 
+def spin_to_disk(a, tilt):
+    """Cartesian spin components (chi_z, chi_perp), chi_perp >= 0 for tilt in [0, pi]."""
+    return a * np.cos(tilt), a * np.sin(tilt)
+
+
+def disk_to_spin(chi_z, chi_perp):
+    """Returns (a, tilt) with tilt in [0, pi] (the sign of chi_perp is dropped, i.e. folded)."""
+    return np.hypot(chi_z, chi_perp), np.arctan2(np.abs(chi_perp), chi_z)
+
+
+# Two spin charts share the relabeling group. "box" (run B): the elliptical-grid square.
+# "disk" (run C): Cartesian spin components; no map, so no Jacobian. In each, the second
+# key of a spin is the one whose sign is a coin flip (the mirror).
+DISK_KEYS = ("ln_chirp_mass", "ln_mass_ratio", "chi_z_1", "chi_perp_1", "chi_z_2", "chi_perp_2")
+CHARTS = {
+    "box": dict(keys=BOX_KEYS, spin=(("u_1", "v_1"), ("u_2", "v_2")), to_chart=spin_to_square),
+    "disk": dict(keys=DISK_KEYS, spin=(("chi_z_1", "chi_perp_1"), ("chi_z_2", "chi_perp_2")),
+                 to_chart=spin_to_disk),
+}
+
+
+def chart_of(names):
+    """'box', 'disk' or None for a list of parameter names."""
+    for chart, c in CHARTS.items():
+        if set(c["keys"]) <= set(names):
+            return chart
+    return None
+
+
 # --- training-time transform ---------------------------------------------------------
 
-class BoxReparamAugment:
-    """Adds BOX_KEYS to sample['parameters'], with a random relabeling g in G.
+class ReparamAugment:
+    """Adds the chart's keys to sample['parameters'], with a random relabeling g in G.
 
     Uses numpy's global RNG, which dingo reseeds per DataLoader worker
     (dingo.core.utils.torchutils.fix_random_seeds), like its other random transforms.
     """
 
+    def __init__(self, chart="box"):
+        self.chart = chart
+
     def __call__(self, input_sample):
+        c = CHARTS[self.chart]
+        (z1k, p1k), (z2k, p2k) = c["spin"]
         sample = input_sample.copy()
         p = dict(sample["parameters"])
         chirp_mass = np.asarray(p["chirp_mass"], dtype=float)
         shape = chirp_mass.shape
         ln_q = np.log(np.asarray(p["mass_ratio"], dtype=float))
-        u1, v1 = spin_to_square(np.asarray(p["a_1"], float), np.asarray(p["tilt_1"], float))
-        u2, v2 = spin_to_square(np.asarray(p["a_2"], float), np.asarray(p["tilt_2"], float))
+        z1, p1 = c["to_chart"](np.asarray(p["a_1"], float), np.asarray(p["tilt_1"], float))
+        z2, p2 = c["to_chart"](np.asarray(p["a_2"], float), np.asarray(p["tilt_2"], float))
 
         swap = np.random.random(shape) < 0.5
         s1 = np.where(np.random.random(shape) < 0.5, -1.0, 1.0)
         s2 = np.where(np.random.random(shape) < 0.5, -1.0, 1.0)
         # swap labels: ln q -> -ln q, spin blocks exchanged
         ln_q = np.where(swap, -ln_q, ln_q)
-        u1, u2 = np.where(swap, u2, u1), np.where(swap, u1, u2)
-        v1, v2 = np.where(swap, v2, v1), np.where(swap, v1, v2)
+        z1, z2 = np.where(swap, z2, z1), np.where(swap, z1, z2)
+        p1, p2 = np.where(swap, p2, p1), np.where(swap, p1, p2)
         # independent sign flips of the in-plane spin components
-        v1, v2 = s1 * v1, s2 * v2
+        p1, p2 = s1 * p1, s2 * p2
 
-        new = dict(ln_chirp_mass=np.log(chirp_mass), ln_mass_ratio=ln_q,
-                   u_1=u1, v_1=v1, u_2=u2, v_2=v2)
+        new = {"ln_chirp_mass": np.log(chirp_mass), "ln_mass_ratio": ln_q,
+               z1k: z1, p1k: p1, z2k: z2, p2k: p2}
         if shape == ():
             new = {k: float(val) for k, val in new.items()}
         p.update(new)
@@ -101,18 +140,26 @@ class BoxReparamAugment:
         return sample
 
 
+class BoxReparamAugment(ReparamAugment):
+    """Run B's augmentation (kept for existing code and checkpoints)."""
+
+    def __init__(self):
+        super().__init__("box")
+
+
 _original_set_train_transforms = _tb.set_train_transforms
 
 
 def set_train_transforms(wfd, data_settings, asd_dataset_path, *args, **kwargs):
-    """dingo's set_train_transforms, plus BoxReparamAugment before standardization."""
+    """dingo's set_train_transforms, plus ReparamAugment before standardization."""
     _original_set_train_transforms(wfd, data_settings, asd_dataset_path, *args, **kwargs)
-    if not set(BOX_KEYS) <= set(data_settings["inference_parameters"]):
+    chart = chart_of(data_settings["inference_parameters"])
+    if chart is None:
         return
     ts = wfd.transform.transforms
     idx = [i for i, t in enumerate(ts) if isinstance(t, SelectStandardizeRepackageParameters)]
     if idx:
-        ts.insert(idx[0], BoxReparamAugment())
+        ts.insert(idx[0], ReparamAugment(chart))
 
 
 _tb.set_train_transforms = set_train_transforms
@@ -130,13 +177,14 @@ def apply_group(theta, g, index):
     """Apply relabeling g to an array theta[..., D] of *unstandardized* parameters,
     with column positions given by index (dict name -> column)."""
     swap, s1, s2 = g
+    (z1k, p1k), (z2k, p2k) = CHARTS[chart_of(list(index))]["spin"]
     out = theta.copy()
     if swap:
         out[..., index["ln_mass_ratio"]] = -theta[..., index["ln_mass_ratio"]]
-        for a, b in (("u_1", "u_2"), ("v_1", "v_2")):
+        for a, b in ((z1k, z2k), (p1k, p2k)):
             out[..., index[a]], out[..., index[b]] = theta[..., index[b]], theta[..., index[a]]
-    out[..., index["v_1"]] *= s1
-    out[..., index["v_2"]] *= s2
+    out[..., index[p1k]] *= s1
+    out[..., index[p2k]] *= s2
     return out
 
 

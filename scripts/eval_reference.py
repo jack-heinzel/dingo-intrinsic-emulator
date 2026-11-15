@@ -40,8 +40,9 @@ def prepare(args):
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-    models = {r: ev.load_model(ev.MODEL_PATH[r], device=args.device) for r in "AB"}
-    inj = Injection.from_posterior_model_metadata(models["A"].metadata)
+    models = {r: ev.load_model(ev.MODEL_PATH[r], device=args.device) for r in args.runs}
+    # injections from the prior of run args.inj_run (all runs share domain and detectors)
+    inj = Injection.from_posterior_model_metadata(ev.load_metadata(ev.MODEL_PATH[args.inj_run]))
     inj.asd = ASDDataset(file_name=ev.ASD_PATH)
 
     events, n_tried = [], 0
@@ -71,7 +72,8 @@ def prepare(args):
         print(f"event {len(events)}/{args.n_events} (tried {n_tried}): SNR {snr:.1f}, "
               f"{len(pts['chirp_mass'])} points", flush=True)
     os.makedirs(OUT, exist_ok=True)
-    ev.save(dict(events=events, metadata=models["A"].metadata, args=vars(args)), f"{OUT}/events.pkl")
+    ev.save(dict(events=events, metadata=models[args.runs[0]].metadata, runs=args.runs, args=vars(args)),
+            f"{OUT}/events.pkl")
     print(f"wrote {OUT}/events.pkl")
 
 
@@ -145,6 +147,7 @@ def reference(args):
 
 def analyze(args):
     d = ev.load(f"{OUT}/events.pkl")
+    runs = d.get("runs", "AB")
     rows = []
     for i, e in enumerate(d["events"]):
         n = len(e["points"]["chirp_mass"])
@@ -157,7 +160,7 @@ def analyze(args):
         if ok.sum() < 3:
             continue
         rec = dict(i=i, snr=e["snr"], logZ=ref[ok, 0], err=ref[ok, 1], source=e["source"][ok])
-        for r in "AB":
+        for r in runs:
             res = e[f"logL_{r}"][ok] - ref[ok, 0]
             rec[f"res_{r}"] = res - np.mean(res)
         rows.append(rec)
@@ -166,12 +169,12 @@ def analyze(args):
         return
     print(f"{len(rows)} events with reference evidences; dynesty error median "
           f"{np.median(np.concatenate([r['err'] for r in rows])):.3f}")
-    print(" ev   SNR   n   std(res_A)  std(res_B)")
+    print(" ev   SNR   n   " + "  ".join(f"std(res_{run})" for run in runs))
     for r in rows:
-        print(f"{r['i']:3d} {r['snr']:5.1f} {len(r['logZ']):3d}   {np.std(r['res_A']):9.3f}  "
-              f"{np.std(r['res_B']):9.3f}")
+        print(f"{r['i']:3d} {r['snr']:5.1f} {len(r['logZ']):3d}   "
+              + "  ".join(f"{np.std(r[f'res_{run}']):9.3f}" for run in runs))
     all_err2 = np.mean(np.concatenate([r["err"] for r in rows]) ** 2)
-    for run in "AB":
+    for run in runs:
         res = np.concatenate([r[f"res_{run}"] for r in rows])
         print(f"run {run}: RMS residual {np.sqrt(np.mean(res ** 2)):.3f} "
               f"(reference noise alone ~{np.sqrt(all_err2):.3f}); median |res| {np.median(np.abs(res)):.3f}; "
@@ -181,7 +184,7 @@ def analyze(args):
     import plot_style
     plot_style.apply()
     fig, ax = plt.subplots(figsize=(6.5, 5))
-    for run, c in (("A", "C0"), ("B", "C1")):
+    for run, c in zip(runs, ("C0", "C1", "C2", "C3")):
         x = np.concatenate([r["logZ"] - r["logZ"].max() for r in rows])
         y = np.concatenate([r[f"res_{run}"] for r in rows])
         ax.scatter(x, y, s=8, color=c, alpha=0.6, lw=0, label=f"run {run}")
@@ -189,7 +192,7 @@ def analyze(args):
     ax.set_xlabel(r"$\ln L_{\rm ref} - \max \ln L_{\rm ref}$ (per event)")
     ax.set_ylabel(r"$\ln L_{\rm emu} - \ln L_{\rm ref}$ (event mean removed)")
     ax.legend(**plot_style.LEG_KW)
-    plot_style.save(fig, "reference_residuals_runAB")
+    plot_style.save(fig, "reference_residuals_run" + "".join(runs))
 
 
 if __name__ == "__main__":
@@ -201,6 +204,8 @@ if __name__ == "__main__":
     s.add_argument("--snr-min", type=float, default=10.0)
     s.add_argument("--seed", type=int, default=1)
     s.add_argument("--device", default="cuda")
+    s.add_argument("--runs", default="AB", help="runs to evaluate, e.g. ABC")
+    s.add_argument("--inj-run", default="A", help="run whose training prior draws the injections")
     s = sub.add_parser("reference")
     s.add_argument("--nproc", type=int, default=os.cpu_count())
     s.add_argument("--nlive", type=int, default=500)
