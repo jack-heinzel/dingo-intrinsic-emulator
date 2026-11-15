@@ -167,3 +167,8 @@ The 15 dimensions split 7 + 2 + 6.
 - 2026-11-14 21:45 EST: 7475710 (A, workergpu212) and 7475711 (B, workergpu214) running since ~21:30. A's first
   stage-0 epoch: 2.5 min training, data loader not the bottleneck (0.03 s vs 0.40 s network per batch). Peak RSS
   so far: A 166 GiB, B 111 GiB (limit 360 GB).
+- 2026-11-15 05:05 / 06:16 EST: 7475710 (A) and 7475711 (B) COMPLETED, all 180 epochs (7 h 35 min and 8 h 46 min).
+  Models: `training/run_{A,B}/model_stage_1.pt` (5.1 GB each). Final test loss A 6.618, B 7.261 (not comparable:
+  different coordinates and priors). Stage 1 gained 0.12 (A) and 0.15 (B) nats over stage 0. Test ≈ train at the end
+  (no overfitting), and losses were still falling when the cosine schedule ended, so a longer schedule or more
+  waveforms should help. Intermediate checkpoints model_010..180.pt take ~180 GB in total.
