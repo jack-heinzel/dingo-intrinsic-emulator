@@ -238,3 +238,5 @@ The 15 dimensions split 7 + 2 + 6.
   test generates. `emulator/evaluation.py` now takes the run letter from the waveform dataset name and treats C and D
   alike; this was edited while 7478829 ran, and its run_of still returns A and B correctly. 7478829 wrote
   `eval/calibration_A_seed1.pkl`, and B is in progress.
+- 2026-11-15 18:20 EST: deleted waveforms_C.hdf5 (user). Submitted (user approved) 7478914 (`slurm/gen_waveforms.sbatch D`) and 7478915
+  (train D, afterok 7478914).
