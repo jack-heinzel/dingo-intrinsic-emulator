@@ -99,6 +99,14 @@ The 15 dimensions split 7 + 2 + 6.
   and the injections came from A's prior. Weighting B's loss to the user's prior was rejected (user asked;
   ESS ~17% per batch, as low as 1%, and the 1/a spike returns to the flow's target).
 
+## Scaling runs A3, B3, D3 (user, 2026-11-15)
+
+- The bitter-lesson check: runs A, B and D at 3M waveforms instead of 1M, with everything else identical (network,
+  120 + 60 epochs, priors). All compress with A's 1M basis (`svd_A.hdf5`; A3 loads it from file). Configs:
+  `configs/{waveforms,train}_{A3,B3,D3}.yaml`. Expect ~29 h (A3) to ~35 h (B3, D3) on one H100, within the 2-day
+  limit. Compare the gain from 3x data with the gains between coordinate and prior choices on the same held-out
+  evaluation.
+
 ## Runs A and B: pilot comparison (user, 2026-11-14)
 
 - Both runs train q1 only. They share the embedding (Stephen's suggestion: the DenseResNet has no funnel, 24
@@ -240,3 +248,7 @@ The 15 dimensions split 7 + 2 + 6.
   `eval/calibration_A_seed1.pkl`, and B is in progress.
 - 2026-11-15 18:20 EST: deleted waveforms_C.hdf5 (user). Submitted (user approved) 7478914 (`slurm/gen_waveforms.sbatch D`) and 7478915
   (train D, afterok 7478914).
+- 2026-11-15 18:34 EST: 7478914 (waveforms D) COMPLETED in 5 min; 7478915 (train D) running since ~18:26 on
+  workergpu212. Submitted (user approved) 7478948 (`slurm/gen_waveforms.sbatch A3 B3 D3`, 3 h limit; the script now
+  takes several runs) and 7478949/7478950/7478951 (train A3/B3/D3, afterok 7478948). `emulator/evaluation.py` still
+  needs to map A3/B3/D3 to their base runs; that waits until 7478829, which imports it, has finished.
