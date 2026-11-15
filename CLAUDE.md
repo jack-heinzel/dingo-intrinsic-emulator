@@ -222,3 +222,6 @@ The 15 dimensions split 7 + 2 + 6.
   networks, one CPU epoch per stage) passes. Wiring check on the tiny C model: `composer.log_prob` at the sampler's
   own samples matches its log_prob column to 1e-5, and the fold equals the direct 8-image logsumexp exactly. B
   shares this code, so B's emulator values are not a wiring artefact.
+- 2026-11-15 18:05 EST: submitted (user approved) 7478827 (`slurm/gen_waveforms.sbatch C`), 7478828 (train C,
+  afterok 7478827) and 7478829 (`SEED=1 NINJ=2000 slurm/eval_calib.sbatch A B`: calibration rerun, outputs
+  `eval/calibration_{A,B}_seed1.pkl`).

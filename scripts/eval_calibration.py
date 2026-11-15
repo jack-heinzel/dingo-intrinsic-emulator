@@ -67,8 +67,8 @@ def sample(args):
     res = {k: (np.array(v) if k != "theta" else v) for k, v in res.items()}
     res.update(run=run, params=ev.PHYS, n_samples=args.n_samples, seed=args.seed)
     os.makedirs(OUT, exist_ok=True)
-    ev.save(res, f"{OUT}/calibration_{run}.pkl")
-    print(f"wrote {OUT}/calibration_{run}.pkl")
+    ev.save(res, f"{OUT}/calibration_{run}{args.tag}.pkl")
+    print(f"wrote {OUT}/calibration_{run}{args.tag}.pkl")
 
 
 LABELS = dict(chirp_mass=r"$\mathcal{M}$", mass_ratio=r"$q$", a_1=r"$a_1$", a_2=r"$a_2$",
@@ -86,7 +86,7 @@ def plot(args):
     fig, axes = plt.subplots(1, len(args.runs), figsize=(5.5 * len(args.runs), 5.5), squeeze=False)
     grid = np.linspace(0, 1, 201)
     for ax, run in zip(axes[0], args.runs):
-        res = ev.load(f"{OUT}/calibration_{run}.pkl")
+        res = ev.load(f"{OUT}/calibration_{run}{args.tag}.pkl")
         n = len(res["level"])
         # 3-sigma band for the empirical CDF of n uniform draws
         band = 3 * np.sqrt(grid * (1 - grid) / n)
@@ -109,7 +109,7 @@ def plot(args):
         ax.legend(loc="lower right", **plot_style.LEG_KW)
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
-    plot_style.save(fig, "pp_run" + "".join(args.runs))
+    plot_style.save(fig, "pp_run" + "".join(args.runs) + args.tag)
 
 
 if __name__ == "__main__":
@@ -121,7 +121,9 @@ if __name__ == "__main__":
     s.add_argument("--n-samples", type=int, default=5000)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--device", default="cuda")
+    s.add_argument("--tag", default="", help="suffix for the output file, e.g. _seed1")
     q = sub.add_parser("plot")
     q.add_argument("runs", nargs="+")
+    q.add_argument("--tag", default="")
     args = p.parse_args()
     {"sample": sample, "plot": plot}[args.cmd](args)
