@@ -260,3 +260,11 @@ The 15 dimensions split 7 + 2 + 6.
   0.101/0.010/0.066). waveforms_D (1M) checked the same way. 7478949-51 (A3/B3/D3) and 7478915 (D, epoch 21) all
   running on workergpu212. `emulator/evaluation.py` now maps X3 to its base run (`ev.base`, `ev.RUNS`); calibration
   accepts all seven runs.
+- 2026-11-16 ~12:50 EST: 7478915 (train D) COMPLETED in 8 h 16 min: test loss 7.390 (A 6.618, B 7.261; not comparable
+  across families). 3M runs at epoch ~140 beat their 1M counterparts at the same epoch by 0.32-0.48 nats (A3 6.269 vs
+  6.707, B3 6.861 vs 7.343). Cross-run score written (user): `scripts/eval_score.py`, `slurm/eval_score.sbatch`. Each
+  run's L_r = q_r/pi_r moves onto a common prior pi_c (A's), normalized by importance sampling from q_r, and is scored by
+  log q'(truth) on shared injections from pi_c. Paired differences are differences in expected KL. Checks on the login
+  node: the Jacobians match finite differences; pi_x * J equals the bilby physical prior exactly (spread 0) for A, B and D;
+  E_pi_r[pi_A/pi_r] = 0.99 +- 0.01. The prior-to-prior ESS is 4.7% (B) and 21% (D) because of the 1/a ratio at zero
+  spin. A full-size model doesn't fit in the login node's 8 GB, so the end-to-end test needs a GPU job.

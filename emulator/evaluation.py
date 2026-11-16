@@ -187,6 +187,28 @@ def log_L_emulator(sampler, run, phys):
     return log_q_phys(sampler, run, phys) - log_prior_train(sampler, run, phys)
 
 
+def log_jacobian_phys(run, phys):
+    """log |d x / d phys| from the physical parameters (chirp_mass, mass_ratio, a_i, tilt_i,
+    d_L) to the run's coordinates x, on the canonical region. The run's density in
+    physical parameters is q_phys = q_x * |dx/dphys| (q_fold for the augmented runs)."""
+    run = base(run)
+    if run == "A":
+        return np.zeros(len(np.atleast_1d(phys["chirp_mass"])))
+    out = -np.log(np.asarray(phys["chirp_mass"], float)) - np.log(np.asarray(phys["mass_ratio"], float))
+    for i in (1, 2):
+        a = np.asarray(phys[f"a_{i}"], float)
+        out = out + np.log(a)  # d(chi_z, chi_perp) / d(a, tilt) = a
+        if run == "B":  # then (chi_z, chi_perp) / A_MAX -> square (u, v)
+            u, v = br.spin_to_square(a, np.asarray(phys[f"tilt_{i}"], float))
+            out = out - 2 * np.log(br.A_MAX) - br.log_jacobian_square_to_disk(u, np.abs(v))
+    return out
+
+
+def log_prior_phys(prior, phys):
+    """log of a bilby prior's density in the physical parameters PHYS (normalized)."""
+    return sum(np.asarray(prior[k].ln_prob(np.asarray(phys[k], float)), float) for k in PHYS)
+
+
 def network_snr(injection, theta, asds):
     """Optimal network SNR of the injected signal, in the injection's ASDs."""
     signal = injection.signal(theta)["waveform"]
