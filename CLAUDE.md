@@ -268,3 +268,6 @@ The 15 dimensions split 7 + 2 + 6.
   node: the Jacobians match finite differences; pi_x * J equals the bilby physical prior exactly (spread 0) for A, B and D;
   E_pi_r[pi_A/pi_r] = 0.99 +- 0.01. The prior-to-prior ESS is 4.7% (B) and 21% (D) because of the 1/a ratio at zero
   spin. A full-size model doesn't fit in the login node's 8 GB, so the end-to-end test needs a GPU job.
+- 2026-11-16 16:55 EST: 7478949/50/51 (A3/B3/D3) COMPLETED, all 180 epochs (21 h 34 min, 20 h 24 min, 21 h 41 min).
+  Final test loss: A3 6.199 (A 6.618), B3 6.799 (B 7.261), D3 7.055 (D 7.390), so 3x data gains 0.42/0.46/0.34 nats.
+  Train ≈ test. Models: `training/run_{A3,B3,D3}/model_stage_1.pt`.
