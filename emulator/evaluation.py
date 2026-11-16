@@ -24,8 +24,14 @@ from emulator import box_reparam as br
 
 DATA = "/mnt/ceph/users/jheinzel/dingo-intrinsic-emulator"
 ASD_PATH = f"{DATA}/asd/asds_O3.hdf5"
-MODEL_PATH = {r: f"{DATA}/training/run_{r}/model_stage_1.pt" for r in "ABCD"}
+RUNS = ("A", "B", "C", "D", "A3", "B3", "D3")  # X3: run X with 3M waveforms
+MODEL_PATH = {r: f"{DATA}/training/run_{r}/model_stage_1.pt" for r in RUNS}
 DISK_RUNS = ("C", "D")  # Cartesian spin chart; they differ only in the spin prior
+
+
+def base(run):
+    """The coordinate/prior family of a run: 'A3' -> 'A'."""
+    return run[0]
 PHYS = ["chirp_mass", "mass_ratio", "a_1", "a_2", "tilt_1", "tilt_2", "luminosity_distance"]
 EXTRINSIC = ["ra", "dec", "psi", "theta_jn", "phase", "phi_12", "phi_jl"]  # integrated out
 # Prior support shared by both runs (configs/waveforms_*.yaml, configs/train_*.yaml).
@@ -119,6 +125,7 @@ def phys_to_disk(phys):
 
 
 def samples_to_phys(samples, run):
+    run = base(run)
     cols = {k: np.asarray(samples[k]) for k in samples}
     if run == "B":
         return box_to_phys(cols)
@@ -149,6 +156,7 @@ def _log_q(sampler, cols, chunk=20000):
 
 def log_q_phys(sampler, run, phys):
     """log q at physical points, in the run's own coordinates; q_fold for run B."""
+    run = base(run)
     if run == "A":
         return _log_q(sampler, {k: phys[k] for k in PHYS})
     box = phys_to_box(phys) if run == "B" else phys_to_disk(phys)
@@ -161,6 +169,7 @@ def log_q_phys(sampler, run, phys):
 
 def log_prior_train(sampler, run, phys):
     """log pi_train in the run's own coordinates, up to a constant."""
+    run = base(run)
     if run == "A":
         prior = sampler.context.prior
         return sum(np.asarray(prior[k].ln_prob(np.asarray(phys[k])), float) for k in PHYS)

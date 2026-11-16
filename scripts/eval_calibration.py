@@ -52,7 +52,7 @@ def sample(args):
         res["leak"].append(1 - ok.mean())
         res["ranks"].append([np.mean(phys[k][ok] < truth[k][0]) for k in ev.PHYS])
         # Samples outside the prior box count as below the truth in both runs.
-        if run == "A":
+        if ev.base(run) == "A":
             lq_samples = np.where(ok, np.asarray(s["log_prob"], float), -np.inf)
         else:
             lq_samples = np.full(len(ok), -np.inf)
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("sample")
-    s.add_argument("run", choices=["A", "B", "C", "D"])
+    s.add_argument("run", choices=ev.RUNS)
     s.add_argument("--n-inj", type=int, default=1000)
     s.add_argument("--n-samples", type=int, default=5000)
     s.add_argument("--seed", type=int, default=0)

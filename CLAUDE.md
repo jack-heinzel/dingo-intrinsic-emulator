@@ -252,3 +252,11 @@ The 15 dimensions split 7 + 2 + 6.
   workergpu212. Submitted (user approved) 7478948 (`slurm/gen_waveforms.sbatch A3 B3 D3`, 3 h limit; the script now
   takes several runs) and 7478949/7478950/7478951 (train A3/B3/D3, afterok 7478948). `emulator/evaluation.py` still
   needs to map A3/B3/D3 to their base runs; that waits until 7478829, which imports it, has finished.
+- 2026-11-15 19:40 EST: 7478829 (calibration rerun, seed 1, 2000 injections each) COMPLETED in 1 h 29 min
+  (`plots/pp_runAB_seed1.pdf`). **Both pass**: A KS p 0.20-0.87, joint level 0.89, combined 0.88; B 0.12-0.97, a_1
+  0.22, joint level 0.91, combined 0.36. Median leak 0.18% for both. So B's seed-0 failures (a_1 0.001, joint 0.010)
+  came from that injection set, as suspected. 7478948 (waveforms A3/B3/D3) COMPLETED in 38 min: 3M each, V identical
+  to svd_A, no non-finite or empty waveforms, priors as configured (mean a1 0.495/0.660/0.516, P(a1 < 0.1)
+  0.101/0.010/0.066). waveforms_D (1M) checked the same way. 7478949-51 (A3/B3/D3) and 7478915 (D, epoch 21) all
+  running on workergpu212. `emulator/evaluation.py` now maps X3 to its base run (`ev.base`, `ev.RUNS`); calibration
+  accepts all seven runs.

@@ -184,7 +184,7 @@ def analyze(args):
     import plot_style
     plot_style.apply()
     fig, ax = plt.subplots(figsize=(6.5, 5))
-    for run, c in zip(runs, ("C0", "C1", "C2", "C3")):
+    for run, c in zip(runs, [f"C{i}" for i in range(10)]):
         x = np.concatenate([r["logZ"] - r["logZ"].max() for r in rows])
         y = np.concatenate([r[f"res_{run}"] for r in rows])
         ax.scatter(x, y, s=8, color=c, alpha=0.6, lw=0, label=f"run {run}")
