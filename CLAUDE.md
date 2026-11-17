@@ -285,3 +285,15 @@ The 15 dimensions split 7 + 2 + 6.
 - 2026-11-17 ~16:30 EST: submitted (user approved) 7489531 (`PRIOR=D ... slurm/eval_score.sbatch A B D A3 B3 D3`): the
   same score on injections from D's prior, to test A's home advantage. Output `eval/score_priorD.pkl`. 7488603
   (calibration D/A3/B3/D3) running since ~14:20.
+- 2026-11-17 16:29 EST: 7489531 (score on D's prior) COMPLETED in 1 h 35 min: `eval/score_priorD.pkl`. Vs A: B +0.02 +- 0.03,
+  D +0.10 +- 0.03, A3 +0.29, B3 +0.44, D3 +0.38 (+- 0.03-0.04). **Home advantage is symmetric:** A beats D by 0.19 on
+  A's prior, D beats A by 0.10 on D's. The cause is the Mc prior. In both evaluations, D - A is about +0.3-0.5 at
+  Mc < 30 and -0.25 to -0.4 at Mc > 70, and about 0 at Mc 30-50, where the priors overlap. So the coordinate change
+  itself is roughly neutral. Tilt: no trend on A's prior; on D's prior, D - A is +0.10 +- 0.05 at near-aligned spins
+  (D3 - A3 +0.17 +- 0.05), a small weakness of A where its sin-tilt prior is thin. B vs D (spin-magnitude prior only):
+  -0.08 +- 0.02 at 1M, +0.06 +- 0.02 at 3M. The ranking of families flips with the evaluation prior (A3 > B3 > D3 on A,
+  B3 > D3 > A3 on D) by 0.1-0.2 nats, while 3x data gives 0.3-0.45 in every case. A's normalization on D's prior is noisy
+  (ESS < 1% on 58 of 1000 events, max bootstrap error 0.66), which, if anything, flatters A.
+  7488603 (calibration D/A3/B3/D3, seed 1, 2000 each) COMPLETED in 4 h 05 min, `plots/pp_runDA3B3D3_seed1.pdf`. A3 is
+  clean (combined 0.53). D 0.17, B3 0.044, D3 0.065 combined. Lowest single p: D3 tilt_2 0.006, B3 a_1 0.019, D tilt_1
+  0.020; none pass Bonferroni over 32 tests (0.0016). Joint level: D 0.039, B3 0.041. Borderline, not failures.
