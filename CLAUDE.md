@@ -282,3 +282,6 @@ The 15 dimensions split 7 + 2 + 6.
   prior, so this cross-checks the method. Median ESS: B 7%, D 35% (max bootstrap error of log Z 0.22, 0.08); median leak
   A 0.19%, D 0.49%. Caveat: the injections come from A's prior, which is A's own training distribution (home
   advantage). B and D are thinner than A at high Mc.
+- 2026-11-17 ~16:30 EST: submitted (user approved) 7489531 (`PRIOR=D ... slurm/eval_score.sbatch A B D A3 B3 D3`): the
+  same score on injections from D's prior, to test A's home advantage. Output `eval/score_priorD.pkl`. 7488603
+  (calibration D/A3/B3/D3) running since ~14:20.
