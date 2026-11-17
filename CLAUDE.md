@@ -274,3 +274,11 @@ The 15 dimensions split 7 + 2 + 6.
 - 2026-11-17 12:20 EST: submitted (user approved) 7488602 (`PRIOR=A NINJ=1000 NSAMP=20000 slurm/eval_score.sbatch A B D A3 B3
   D3`, cross-run score, first end-to-end run) and 7488603 (`SEED=1 NINJ=2000 slurm/eval_calib.sbatch D A3 B3 D3`, 7 h).
   Deleted the intermediate checkpoints model_010..180.pt of D, A3, B3 and D3 (user), 72 x 5.1 GB = 367 GB.
+- 2026-11-17 13:54 EST: 7488602 (cross-run score) COMPLETED in 1 h 35 min: `eval/score_priorA.pkl`, 1000 injections from
+  A's prior (median SNR 6.3), 20k samples. Self-check: for A, every weight at the truth is 1 and log Z = log(1 - leak)
+  exactly. Mean score vs A (paired, +- s.e.; positive is better): B -0.33 +- 0.04, D -0.19 +- 0.03, A3 +0.44 +- 0.04,
+  B3 +0.25 +- 0.03, D3 +0.21 +- 0.03. The gaps grow with SNR (SNR > 30, 116 injections: B -1.49, D -0.74, A3 +1.79,
+  B3 +0.67, D3 +0.55). A3 - A = 0.44 +- 0.04 matches their test-loss difference, 0.42; both average the KL over A's
+  prior, so this cross-checks the method. Median ESS: B 7%, D 35% (max bootstrap error of log Z 0.22, 0.08); median leak
+  A 0.19%, D 0.49%. Caveat: the injections come from A's prior, which is A's own training distribution (home
+  advantage). B and D are thinner than A at high Mc.
