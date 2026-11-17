@@ -271,3 +271,6 @@ The 15 dimensions split 7 + 2 + 6.
 - 2026-11-16 16:55 EST: 7478949/50/51 (A3/B3/D3) COMPLETED, all 180 epochs (21 h 34 min, 20 h 24 min, 21 h 41 min).
   Final test loss: A3 6.199 (A 6.618), B3 6.799 (B 7.261), D3 7.055 (D 7.390), so 3x data gains 0.42/0.46/0.34 nats.
   Train ≈ test. Models: `training/run_{A3,B3,D3}/model_stage_1.pt`.
+- 2026-11-17 12:20 EST: submitted (user approved) 7488602 (`PRIOR=A NINJ=1000 NSAMP=20000 slurm/eval_score.sbatch A B D A3 B3
+  D3`, cross-run score, first end-to-end run) and 7488603 (`SEED=1 NINJ=2000 slurm/eval_calib.sbatch D A3 B3 D3`, 7 h).
+  Deleted the intermediate checkpoints model_010..180.pt of D, A3, B3 and D3 (user), 72 x 5.1 GB = 367 GB.
